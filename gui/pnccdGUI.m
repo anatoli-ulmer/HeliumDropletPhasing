@@ -109,6 +109,18 @@ if exist('varargin','var')
         end
     end
 end
+if isempty(db.runInfo)
+    db.runInfo = load(fullfile(thisPath,'/db/db_run_info.mat')); 
+end
+if isempty(db.sizing)
+    db.sizing = load(fullfile(thisPath,'/db/db_sizing.mat'));
+end
+if isempty(db.center)
+	db.center = load(fullfile(thisPath,'/db/db_center.mat'));
+end
+if isempty(db.shape)
+    db.shape = load(fullfile(thisPath,'/db/db_shape.mat'));
+end
  
 %% Init
 initFcn;

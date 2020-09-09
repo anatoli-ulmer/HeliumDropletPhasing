@@ -109,6 +109,16 @@ if exist('varargin','var')
         end
     end
 end
+if isempty(db.runInfo)
+    db.runInfo = load(fullfile(thisPath,'/db/db_run_info.mat')); 
+end
+if isempty(db.sizing)
+    db.sizing = load(fullfile(thisPath,'/db/db_sizing.mat'));
+end
+if isempty(db.center)
+	db.center = load(fullfile(thisPath/db/db_center.mat'));
+end
+if isempty(db.shape), db.shape = load('thisPath/db/db_shape.mat'); end
  
 %% Init
 initFcn;
@@ -688,14 +698,6 @@ initFcn;
         hIPR.plotAll;
         hFig.main.Pointer = 'arrow'; drawnow limitrate;
     end
-    function iterateIPR(method)
-        for i=1:hData.var.nLoops
-            if hFig.main.UserData.stopScript; hFig.main.UserData.stopScript = false; break; end
-            hIPR.iterate(hData.var.nSteps,method);
-            hIPR.plotAll;
-        end
-%         figure(hFig.main)
-    end
     function startSimulation(~,~)
         fprintf('Starting simulation ...\n')
         hData.bool.simulationMode = true;
@@ -706,45 +708,87 @@ initFcn;
             hFig.main);
         fprintf('\tSimulation started!\n')
     end
+    function reconANDsave(~,~)
+%         try d = load(fullfile(paths.db, 'db_recon.mat')); db_recon = d.db_recon; clear d;
+%         catch; fprintf('could not load db_recon\n'); end
+        while true
+%             try
+            if strcmp(db.runInfo(run).doping.dopant,'none')
+                fprintf('run %i is not doped. Continuing...\n',run)
+                loadNextFile([],[],pnccdGUIPaths.pnccd, run+1,1);
+                continue
+            end
+            if hData.var.nPhotonsOnDetector<5e4 ...
+                    || isnan(db.sizing(run).R(hit)) ...
+                    || db.sizing(run).R(hit)*1e9<30
+                loadNextHit([],[],1);
+                continue
+            end
+            if run>=437 && hData.var.nPhotonsOnDetector<1e5
+                loadNextHit([],[],1);
+                continue
+            end
+%             centerImgFcn;
+%             findShapeFcn;
+            
+            initIPR();
+            hIPR.addReconPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
+            hIPR.addReconPlan('nthio',hData.var.nSteps,hData.var.nLoops);
+            hIPR.startRecon();
+            print(figure(20000002),fullfile('C:\Users\Toli\Google Drive\dissertation\2.helium\xfel-img\2020-09-07',...
+                sprintf('run%04d_hit%04d_dcdi.png',run,hit)),'-dpng')
+%         end
+            loadNextHit([],[],1)
+        end
+    end % reconAndSave
 
 %% Methods - NOT IN USE
+%     function iterateIPR(method)
+%         for i=1:hData.var.nLoops
+%             if hFig.main.UserData.stopScript; hFig.main.UserData.stopScript = false; break; end
+%             hIPR.iterate(hData.var.nSteps,method);
+%             hIPR.plotAll;
+%         end
+% %         figure(hFig.main)
+%     end
 %     function finishRecon
 %         hIPR.fig.rec.Pointer = 'watch'; drawnow;
 %         hIPR.zeroBorders;
 %         hIPR.fig.rec.Pointer = 'arrow'; drawnow;
 %     end
-    function reconANDsave(~,~)
-%         %         try d = load(fullfile(paths.db, 'db_recon.mat')); db_recon = d.db_recon; clear d;
-%         %         catch; fprintf('could not load db_recon\n'); end
-        while true
-            try
-                if strcmp(db.runInfo(run).doping.dopant,'none')
-                    fprintf('run %i is not doped. Continuing...\n',run)
-                    loadNextFile([],[],pnccdGUIPaths.pnccd, run+1,1);
-                    continue
-                end
-                if hData.var.nPhotonsOnDetector<5e4 ...
-                        || isnan(db.sizing(run).R(hit)) ...
-                        || db.sizing(run).R(hit)*1e9<30
-                    loadNextHit([],[],1);
-                    continue
-                end
-                if run>=437 && hData.var.nPhotonsOnDetector<1e5
-                    loadNextHit([],[],1);
-                    continue
-                end
-                %             centerImgFcn;
-                %             findShapeFcn;
-
-                initIPR();
-                hIPR.add
-                iterateIPR('dcdi');
-                print(figure(20000002),fullfile('C:\Users\Toli\Google Drive\dissertation\2.helium\xfel-img\2020-09-07',...
-                    sprintf('run%04d_hit%04d_dcdi.png',run,hit)),'-dpng')
-            end
-            loadNextHit([],[],1)
-        end
-    end
+%     function reconANDsave(~,~)
+% %         %         try d = load(fullfile(paths.db, 'db_recon.mat')); db_recon = d.db_recon; clear d;
+% %         %         catch; fprintf('could not load db_recon\n'); end
+%         while true
+% %             try
+%                 if strcmp(db.runInfo(run).doping.dopant,'none')
+%                     fprintf('run %i is not doped. Continuing...\n',run)
+%                     loadNextFile([],[],pnccdGUIPaths.pnccd, run+1,1);
+%                     continue
+%                 end
+%                 if hData.var.nPhotonsOnDetector<5e4 ...
+%                         || isnan(db.sizing(run).R(hit)) ...
+%                         || db.sizing(run).R(hit)*1e9<30
+%                     loadNextHit([],[],1);
+%                     continue
+%                 end
+%                 if run>=437 && hData.var.nPhotonsOnDetector<1e5
+%                     loadNextHit([],[],1);
+%                     continue
+%                 end
+%                 %             centerImgFcn;
+%                 %             findShapeFcn;
+% 
+%                 initIPR();
+%                 hIPR.addReconPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
+%                 hIPR.addReconPlan('nthio',hData.var.nSteps,hData.var.nLoops);
+%                 hIPR.startRecon();
+%                 print(figure(20000002),fullfile('C:\Users\Toli\Google Drive\dissertation\2.helium\xfel-img\2020-09-07',...
+%                     sprintf('run%04d_hit%04d_dcdi.png',run,hit)),'-dpng')
+% %             end
+%             loadNextHit([],[],1)
+%         end
+%     end
             
 %             %                 startDCDI
 %             %                 startHIO
@@ -942,7 +986,7 @@ initFcn;
 %             loadNextHit(src,evt,1);
 %         end
 %     end
-end
+end % pnccdGUI
 
 
 
