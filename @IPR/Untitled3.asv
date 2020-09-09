@@ -1,0 +1,4 @@
+function obj = startRecon(obj)
+    for 
+    obj.reconPlan = [obj.reconPlan; {method,nSteps}];
+end

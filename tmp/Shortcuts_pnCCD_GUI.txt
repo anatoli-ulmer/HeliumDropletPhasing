@@ -1,0 +1,51 @@
+case 'escape'
+    fig.UserData.stopScript = true;
+case 'leftarrow'
+prevfun;
+case 'rightarrow'
+    nextfun;  
+case 's'
+    saveimgfun;
+case 'l'
+    getfilefun;
+case 'c'
+    clc;
+    fig.Pointer = 'arrow'; drawnow;
+    try hipr.fig.rec.Pointer = 'arrow'; drawnow; end
+case 'r'
+    centerfun
+    shapefun
+    initIPR
+    %                 startDCDI
+    startIO
+case {'1','numpad1'}
+    centerfun;
+case {'2','numpad2'}
+    shapefun
+case {'3','numpad3'}
+    initIPR
+case {'4','numpad4'}
+    startDCDI
+case {'5','numpad5'}
+    startHIO
+case {'6','numpad6'}
+    startIO
+case {'7','numpad7'}
+    startER
+case {'8','numpad8'}
+%                 finishrecon
+    hipr.plotFinalResult;
+case {'9','numpad9'}
+    oneShotRecon
+case 'slash'
+    reconANDsave
+case 'z'
+    find_all_centers
+case 'p'
+    getGapAndShift
+case 'o'
+    getShapes
+case 'm'
+    img = centerAndCrop(img, center);
+    mask = ~isnan(img);
+    save(fullfile(paths.sim , 'simdata.mat'), 'img','mask')
