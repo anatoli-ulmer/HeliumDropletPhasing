@@ -3,7 +3,7 @@ function obj = resizeData(obj)
     obj.masking.rmin = obj.masking.rmin*obj.binFactor;
     obj.masking.rmax = obj.masking.rmax*obj.binFactor;
 
-    obj.SCATT = imresize(obj.SCATT, obj.binFactor, obj.binMethod)*obj.binFactor^2;
+    obj.SCATT = imresize(obj.SCATT, obj.binFactor, obj.binMethod)/obj.binFactor^2;
 %     % self written method so be sure that binning works correct
 %     obj.SCATT = imgBinning(obj.SCATT, obj.binFactor);
 

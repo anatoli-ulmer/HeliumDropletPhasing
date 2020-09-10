@@ -1,6 +1,5 @@
 function obj = iterate(obj, nSteps, method)
-    obj.errors(:,1) = calcError(obj.ws, obj.rho, obj.support0, obj.AMP, obj.AMP0, obj.MASK);
-    obj.errors = [obj.errors, nan(size(obj.errors,1), nSteps, 'single', 'gpuArray')];
+    obj.errors=[obj.errors,nan(size(obj.errors,1),nSteps,'single','gpuArray')];
     
     for i=1:nSteps
         obj.W = ft2(obj.w);

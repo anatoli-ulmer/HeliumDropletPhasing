@@ -1,6 +1,6 @@
-function obj = scanParameter(obj, sVar, sArray, nSteps, savePath)
+function obj = scanParameter(obj, sVar, sArray, savePath)
     fprintf('starting scan for %s=[%.2g',sVar,sArray(1))
-    arrayfun(@(a)fprintf(',%.2g',a),sArray(2:end))
+    arrayfun(@(a)fprintf(',%.2g',a),gather(sArray(2:end)))
     fprintf(']\n')
     %% copy existing scanObj
     scanObj = obj.scanObj;
@@ -15,6 +15,7 @@ function obj = scanParameter(obj, sVar, sArray, nSteps, savePath)
     gObj.hTLR = tiledlayout(gObj.hFigR, 'flow');
     %% run the reconstructions
     nPoints = numel(sArray);
+    thisReconPlan = obj.reconPlan;
     for i=1:nPoints
         %% set parameter
         obj=resetIPR(obj);
@@ -22,13 +23,13 @@ function obj = scanParameter(obj, sVar, sArray, nSteps, savePath)
         fprintf('\t%s = %.3g\n', sVar, sArray(i))
         %% run reconstruction
 %         obj.iterate(nSteps, method);
+        obj.reconPlan=thisReconPlan;
         obj.startRecon();
         %% copy parameter and results
         scanData(i).errors = obj.errors; %#ok<*AGROW>
         scanData(i).realSpaceError = obj.errors(1,end-1);
         scanData(i).fourierSpaceError = obj.errors(4,end-1);
         scanData(i).NRMSD = obj.errors(3,end-1);
-        scanData(i).nsteps = nSteps;
         scanData(i).alpha = obj.alpha;
         scanData(i).delta = obj.delta;
         scanData(i).w = obj.w;
@@ -78,8 +79,7 @@ function obj = scanParameter(obj, sVar, sArray, nSteps, savePath)
     scanObj.scanVariable = sVar;
     scanObj.scanArray = sArray;
     scanObj.imageSavePath = savePath;
-    scanObj.nSteps = nSteps;
-    scanObj.method = method;
+    scanObj.reconPlan = thisReconPlan;
     scanObj.scanData = scanData;
     scanObj.gObj = gObj;
     %% copy scanObj for return

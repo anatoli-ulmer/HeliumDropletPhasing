@@ -20,5 +20,4 @@ function obj = initIPR(obj, pnCCDimg)
     obj.plotAll();
 
     fprintf('\t... done.\n')
-
 end

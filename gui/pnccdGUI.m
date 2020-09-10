@@ -281,9 +281,9 @@ initFcn;
 %         % Custom Gaps for different shifts if needed (not recommended)
 %         hData.par.addGap = [5 5 5 5 9] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
 %         hData.par.addShift = [-6 -2 0 0 2] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
-        hData.par.addGap = [0 -2 0 0 0] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
-        hData.par.addShift = [0 -2 0 0 0] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
-        hData.par.addCenter = 0*[-1,1];
+        hData.par.addGap = [0 -2 -3 -1 1] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
+        hData.par.addShift = [0 -2 1 0 -1] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
+%         hData.par.addCenter = -1*[1,1];
         % Automatic correction of relative geometry (gap size and left/right 
         % shift) from calculated values based on the motor encoder values of 
         % the pnCCDs, and manual calibration for some images.
@@ -546,32 +546,35 @@ initFcn;
     end
     function centerImgFcn(~,~)
         hFig.main.Pointer = 'watch'; drawnow;
-%         if isempty(hFig.centering); 
+        if isempty(hFig.centering) 
             hFig.centering = figure(1010102); figure(hFig.main); 
-%         end
-        if ~isvalid(hFig.centering); hFig.centering = figure(1010102); figure(hFig.main); end
+        end
+        if ~isvalid(hFig.centering) || ~isgraphics(hFig.centering)
+            hFig.centering = figure(1010102); figure(hFig.main); 
+        end
         hFig.centering.KeyPressFcn = @centerkeyfun;
         hFig.centering.Name = 'centering';
-        if hit<=numel(db.center(run).center)
-            if isfield(db.center(run).center(hit),'data')
-                if ~isempty(db.center(run).center(hit).data)
-                    hData.var.center = db.center(run).center(hit).data;
-                    hData.var.center = hData.var.center + [hData.par.addGap/2, -hData.par.addShift/2];
-                    hFig.main.Pointer = 'arrow'; drawnow;
-                    %                     centrosymmetric
-                    updatePlotsFcn;
-                    return
-                end
-            end
-        end
-        [hData.var.center, hAx.centering, hPlt.centering] = findCenterFcn(hData.img.data, 'figure', hFig.centering, 'center', hData.var.center, ...
-            'nwedges', 16, 'movmeanpix', 3, 'rmin', 70, 'rmax', 160,'dispflag', 1, 'nIter', 7);
+%         if hit<=numel(db.center(run).center)
+%             if isfield(db.center(run).center(hit),'data')
+%                 if ~isempty(db.center(run).center(hit).data)
+%                     hData.var.center = db.center(run).center(hit).data;
+%                     hData.var.center = hData.var.center + [hData.par.addGap/2, -hData.par.addShift/2];
+%                     hFig.main.Pointer = 'arrow'; drawnow;
+%                     %                     centrosymmetric
+%                     updatePlotsFcn;
+%                     return
+%                 end
+%             end
+%         end
+        [hData.var.center, hAx.centering, hPlt.centering] = findCenterFcn(...
+            hData.img.data,'figure',hFig.centering,'center',...
+            hData.var.center,'nWedges',16,'movMeanPixel',3,'rMin',70,...
+            'rMax',160,'displayflag',1,'nIterations',7);
         db.center(run).center(hit).data = hData.var.center;
         hFig.main.Pointer = 'arrow'; drawnow;
-        %         centrosymmetric
-        updatePlotsFcn;
+        updatePlotsFcn();
         %         INCLUDE THIS AGAIN!
-%         save(fullfile(paths.db, 'db_center.mat'), 'db.center');
+%         save(fullfile(thisPath, 'db/db.mat'), 'db');
         fprintf('    -> centered\n')
     end
     function centerkeyfun(~, eventdata)

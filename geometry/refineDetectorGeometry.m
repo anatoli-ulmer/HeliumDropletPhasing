@@ -103,7 +103,7 @@ function refineDetectorGeometry(data, simu, shiftUH, ...
 			case 'axesSimu'
 				shiftSimu = shiftSimu+newShift;
             case 'axesOverlap'
-                if hAxesArray(4).CurrentPoint(2)>512
+                if hAxesArray(4).CurrentPoint(1,2)>512
                     shiftUH = shiftUH+newShift;
                 else
                     shiftLH = shiftLH+newShift;

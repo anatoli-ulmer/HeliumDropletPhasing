@@ -151,7 +151,7 @@ classdef IPR < handle
         obj = applyConstraints(obj, method)                                             
         rho = normalizeDensity(ws, support, rho0, alpha)
         WS = projectorModulus(AMP, AMP0, PHASE, MASK)
-        obj = scanParameter(obj, sVar, sArray, nSteps, savePath)        % scan parameter and save images
+        obj = scanParameter(obj, sVar, sArray, savePath)        % scan parameter and save images
         
         alpha = updateAlpha(alphaArray, idx)
         beta = updateBeta(beta0, beta, nTotal)

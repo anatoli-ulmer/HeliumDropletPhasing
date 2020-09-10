@@ -44,9 +44,9 @@ function obj = configIPR(obj)
     %% plot parameter
     obj.nStepsUpdatePlot                = Inf;
     obj.int_cm                          = 'imorgen';            % colormap index for Fourier domain (dropdown menu)
-    obj.rec_cm                          = 'wjet';               % colormap for Real domain (dropdown menu)
-    obj.clims_scatt                     = ([-2,2]);             % colormap limits for Fourier domain (log10 scale!)
-    obj.reconrange                      = 1;                    % range index for color map scaling (dropdown menu)
+    obj.rec_cm                          = 'b2r';               % colormap for Real domain (dropdown menu)
+    obj.clims_scatt                     = ([-1,3]);             % colormap limits for Fourier domain (log10 scale!)
+    obj.reconrange                      = 3;                    % range index for color map scaling (dropdown menu)
     obj.intpart                         = 1;
     obj.reconpart                       = 'abs';                % 'real' | 'imag' | 'abs' | 'angle' -  filter for Real space image
     obj.normalize_shape                 = false;
