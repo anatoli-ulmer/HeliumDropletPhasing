@@ -21,6 +21,7 @@ hAx.pnccd = gobjects(1);
 hAx.pnccd_CBar = gobjects(1);
 hAx.lit = gobjects(1);
 hAx.centering = gobjects(1);
+hAx.shape = gobjects(1);
 
 hPlt.pnccd = gobjects(1);
 hPlt.lit = gobjects(1);
@@ -44,7 +45,7 @@ hData.shape = [];
 hData.filename = '';
 
 hData.par.nPixelFull = [1100,1050];
-hData.par.nPixel = [1024, 1024]; 
+hData.par.nPixel = [1024, 1024];
 hData.par.datatype = 'single';
 hData.par.cLims = [0.1, 100];
 hData.par.cMap = imorgen;
@@ -58,6 +59,7 @@ hData.bool.logScale = true;
 hData.bool.drawRings = false;
 hData.bool.autoScale = false;
 hData.bool.simulationMode = false;
+hData.bool.isCropped=false;
 
 hData.var.nHits = nan;
 hData.var.nSteps = 100;
@@ -75,6 +77,7 @@ hData.img.mask = ones(hData.par.nPixel, hData.par.datatype);
 hData.img.data = nan(hData.par.nPixelFull, hData.par.datatype);
 hData.img.dataSimulated = nan(hData.par.nPixelFull, hData.par.datatype);
 hData.img.dataCorrected = nan(hData.par.nPixel, hData.par.datatype);
+hData.img.dataCropped = nan(hData.par.nPixel, hData.par.datatype);
 hData.img.support = nan(hData.par.nPixel, hData.par.datatype);
 hData.img.dropletdensity = nan(hData.par.nPixel, hData.par.datatype);
 
@@ -110,22 +113,23 @@ if exist('varargin','var')
     end
 end
 if isempty(db.runInfo)
-    db.runInfo = load(fullfile(thisPath,'/db/db_run_info.mat')); 
+    db.runInfo = load(fullfile(thisPath,'/db/db_run_info.mat'));
 end
 if isempty(db.sizing)
     db.sizing = load(fullfile(thisPath,'/db/db_sizing.mat'));
 end
 if isempty(db.center)
-	db.center = load(fullfile(thisPath,'/db/db_center.mat'));
+    db.center = load(fullfile(thisPath,'/db/db_center.mat'));
 end
 if isempty(db.shape)
     db.shape = load(fullfile(thisPath,'/db/db_shape.mat'));
 end
- 
+
 %% Init
 initFcn;
 
 %% Methods
+    %% Key and Button Callbacks
     function thisKeyPressFcn(src,evt)
         src.Pointer = 'watch'; drawnow;
         switch evt.Key
@@ -146,7 +150,7 @@ initFcn;
                 clc; src.Pointer = 'arrow'; drawnow;
             case {'1','numpad1'},       centerImgFcn;
             case {'2','numpad2'},       findShapeFcn
-            case {'3','numpad3'}       
+            case {'3','numpad3'}
                 if ~hFig.main.UserData.isRegisteredShift
                     initIPR
                 else
@@ -166,15 +170,14 @@ initFcn;
             case {'return'},       hIPR.startRecon;
             case 'k', reconANDsave
             case 'f12'
-                hIPR.scanParameter('alpha', (0.5:0.1:1.5), fullfile(...
+                hIPR.scanParameter('alpha', (0.5:0.05:1.5), fullfile(...
                     pnccdGUIPaths.img, sprintf('run%04d-hit%04d',run,hit)) );
             case 'f11'
                 hIPR.scanParameter('delta', (0:1:10)*hIPR.noise, fullfile(...
                     pnccdGUIPaths.img, sprintf('run%04d-hit%04d',run,hit)) );
             case {'r','numpad0'}
                 hIPR.resetIPR;
-                hIPR.plotAll;
-%             otherwise, disp(evt.Key);
+                %             otherwise, disp(evt.Key);
         end
         unregisterKeys(hFig.main);
         src.Pointer = 'arrow'; drawnow;
@@ -185,13 +188,27 @@ initFcn;
         src.UserData.isRegisteredControl = false;
         src.UserData.isRegisteredShift = false;
     end
+    function thisWindowButtonDownFcn(src,~)
+        if strcmp(src.SelectionType, 'open')
+            if src.CurrentAxes==hAx.lit
+                %hFig.main.UserData.origMousePos = src.CurrentAxes.CurrentPoint;
+                %hit = round(hFig.main.UserData.origMousePos(2));
+                hit = round(src.CurrentAxes.CurrentPoint(2));
+                hFig.main_uicontrols.index_txt.String = sprintf('%i/%i', hit, numel(pnccd.trainid));
+                loadImageData;
+                updatePlotsFcn;
+                return
+            end
+        end
+    end
+    %% Initialization Functions
     function initFcn(~,~)
         %%%%%%%%%%% databases %%%%%%%%%%%
         db = loadDatabases(pnccdGUIPaths, db);
         if db.runInfo(run).isData
-%             hData.filename = sprintf('%04i_hits.mat', run);
-%             hData.matObj = matfile(fullfile(paths.pnccd, hData.filename));
-%             load(fullfile(pnccdGUIPaths.pnccd, hData.filename), '-mat', 'pnccd');
+            %             hData.filename = sprintf('%04i_hits.mat', run);
+            %             hData.matObj = matfile(fullfile(paths.pnccd, hData.filename));
+            %             load(fullfile(pnccdGUIPaths.pnccd, hData.filename), '-mat', 'pnccd');
             [pnccd, hData.filename, hData.var.nHits] = pnccd_load_run(run, pnccdGUIPaths.pnccd);
         else
             error('Warning: run #%i is not a data run and was not loaded!', run);
@@ -215,145 +232,7 @@ initFcn;
         loadImageData;
         createPlots;
     end
-
-    function loadNextFile(~,~,filepath,nextRun,direction)
-%         fprintf('saving recon file ...'); drawnow;
-%         save(fullfile(paths.recon, sprintf('r%04d_recon_%s.mat', run, db.runInfo(run).doping.dopant{:})), 'hRecon', '-v7.3');
-%         fprintf('done!\n'); drawnow;
-        if ~exist('direction','var')
-            direction = 1;
-        end
-
-        nextFile = fullfile(filepath, sprintf('%04i_hits.mat', nextRun));
-        while ~db.runInfo(nextRun).isData || ~exist(nextFile, 'file')
-            warning(['Run #%03d is not a data run and was not loaded.\n',...
-                'Trying next: run #%03d\n'], nextRun, nextRun+direction);
-            nextRun = nextRun + direction;
-            nextFile = fullfile(pnccdGUIPaths.pnccd, sprintf('%04i_hits.mat', nextRun));
-            if nextRun>489 || nextRun<200; return; end
-        end
-        fprintf('loading file %s\n', nextFile)
-        % Save previous data for faster loading of the last viewed file
-        [run, hPrevData.run] = swap(run, hPrevData.run);
-        [hit, hPrevData.hit] = swap(hit, hPrevData.hit);
-        [pnccd, hPrevData.pnccd] = swap(pnccd, hPrevData.pnccd);
-        [hRecon, hPrevData.hRecon] = swap(hRecon, hPrevData.hRecon);
-        [hData.filename, hPrevData.filename] = swap(hData.filename, hPrevData.filename);
-        
-        % Check if new path folder was selected
-        if ~strcmp(filepath, hData.filepath)
-            hData.filepath = filepath;
-            hPrevData.run = nan;
-        end
-        
-        % Check if requested run is stored in hPrevData, otherwise load it.
-        if run ~= nextRun
-            [pnccd, hData.filename, hData.var.nHits] = pnccd_load_run(nextRun, pnccdGUIPaths.pnccd);
-            run = pnccd.run;
-            %             hRecon = load_recon(nextrun, paths.recon);
-        end
-        hit = iif(direction>0,1,numel(db.runInfo(run).nlit_smooth));
-        loadImageData;
-    end
-    function loadImageData(~,~)
-        fprintf('Loading run #%03d hit %01d ...\n', run, hit)
-        % Get data from databases
-        hData.bool.simulationMode = false;
-        hData.img.input = pnccd.data(hit).image;
-        hData.trainId = pnccd.trainid(hit);
-        % Old correction needs to be made
-        if ~db.sizing(run).ok(hit); db.sizing(run).R(hit) = nan; end 
-        hData.var.radiusInNm = db.sizing(run).R(hit);
-        hData.var.radiusInPixel = db.sizing(run).R(hit)*1e9/6;
-        hData.var.nLitPixel = db.runInfo(run).nlit_smooth(hit);
-        hData.var.nPhotonsOnDetector = nansum(hData.img.data(:));
-        
-        % Check if run was background subtracted (folder name ends with "_bg").
-        % Do Subtraction if not.
-        if ~strcmp(pnccdGUIPaths.pnccd(end-2:end-1),'bg')
-            hData.img.input = hData.img.input - pnccd.bg_corr;
-        end
-        
-        % Custom masking
-        hData.img.input(hData.img.mask==0) = nan;
-        hData.img.mask = ~isnan(hData.img.input);
-
-%         % Custom Gaps for different shifts if needed (not recommended)
-%         hData.par.addGap = [5 5 5 5 9] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
-%         hData.par.addShift = [-6 -2 0 0 2] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
-        hData.par.addGap = [0 -2 -3 -1 1] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
-        hData.par.addShift = [0 -2 1 0 -1] * ([209, 261, 309, 375, 430]<=run & run<[261, 309, 375, 430, 490])';
-%         hData.par.addCenter = -1*[1,1];
-        % Automatic correction of relative geometry (gap size and left/right 
-        % shift) from calculated values based on the motor encoder values of 
-        % the pnCCDs, and manual calibration for some images.
-        [hData.img.dataCorrected, hData.var.gapSize, hData.var.shiftSize, ~, hData.var.center] ...
-            = pnccdGeometryFcn(hData.img.input, db.runInfo, pnccd.run, hData.par.nPixelFull, hData.par.addGap, hData.par.addShift);
-
-        if ~isempty(db.center(run).center)
-            if hit <= numel(db.center(run).center)
-                if ~isempty(db.center(run).center(hit).data)
-                    hData.var.center = db.center(run).center(hit).data...
-                        + hData.par.addCenter;
-%                     db.center(run).center(hit).data
-%                     run
-%                     hit
-%                     figure(35); imagesc(hData.img.data)
-                    hData.img.dataCorrected = centerAndCropFcn(hData.img.dataCorrected, hData.var.center); %fprintf('db_center found and automatically centered and cropped.');
-                    fprintf('...centered\t...cropped\n');
-                end
-            end
-        end
-        hData.shape = [];
-        if ~isempty(db.shape(run).shape)
-            if hit <= numel(db.shape(run).shape)
-                if ~isempty(db.shape(run).shape(hit).data)
-                    hData.shape = db.shape(run).shape(hit).data;
-                    [hData.img.dropletdensity, hData.img.support] = ellipsoid_density(hData.shape.a/2, hData.shape.b/2, (hData.shape.a/2+hData.shape.b/2)/2, hData.shape.rot, [513,513], [1024,1024]);
-                    fprintf('...shape found\t...got support & density\n');
-
-                    %% BEGIN: DETECTOR GEOMETRY CORRECTION
-%                     dataScatt = hData.img.dataCorrected;
-%                     simScatt = abs(ft2(hData.img.dropletdensity)).^2;
-%                     refineDetectorGeometry(dataScatt, simScatt)
-                    %% END: DETECTOR GEOMETRY CORRECTION
-                end
-            end
-        end
-    end
-    function loadNextHit(src,evt,direction)
-        if nargin<3
-            switch src.String
-                case 43, direction = -1;
-                case 45, direction = 1;
-                otherwise
-                    error('Error in pnccdGUI/loadNextHit: direction not defined and caller function is not the "+" or "-" button callback.')
-            end
-        end 
-        if hit+direction<1 || hit+direction>numel(pnccd.trainid)
-            loadNextFile(src,evt,hData.filepath, run+direction, direction);
-        else
-            hit = hit+direction;
-            hFig.main_uicontrols.index_txt.String = sprintf('%i/%i', hit, numel(pnccd.trainid));
-            loadImageData;
-        end
-        createPlots;
-    end
-    function getFileFcn(src,evt)
-        [fn, fp] = uigetfile(fullfile(pnccdGUIPaths.pnccd, hData.filename));
-        if isequal(fn,0)
-            disp('User selected Cancel')
-        else
-            pnccdGUIPaths.pnccd = fp;
-            hAx.pnccd.Title.String = sprintf('loading run #%si ...', fn(1:4)); drawnow;
-            nextrun = str2num_fast(fn(1:4));
-            loadNextFile(src, evt, fp, nextrun);
-            createPlots;
-        end
-    end
-
     function createGUI(~,~)
-        
         hFig.main.Visible = 'off';
         hFig.main.Name = 'pnccdGUI';
         hFig.main.KeyPressFcn = @thisKeyPressFcn;
@@ -364,7 +243,7 @@ initFcn;
         hFig.main.UserData.isRegisteredAlt = false;
         hFig.main.UserData.isRegisteredControl = false;
         hFig.main.UserData.isRegisteredShift = false;
-
+        
         hAx.pnccd = axes('OuterPosition', [.0 .0 .55 .95]);
         hAx.pnccd.Tag = 'pnccd';
         hAx.lit = axes('OuterPosition', [.525 .025 .5 .5]);
@@ -453,7 +332,7 @@ initFcn;
         
         cla(hAx.lit); hold(hAx.lit, 'off');
         hPlt.lit = stem(hAx.lit, db.runInfo(run).nlit_smooth);
-%         hPlt.lit.ButtonDownFcn = @thisWindowButtonDownFcn; 
+        %         hPlt.lit.ButtonDownFcn = @thisWindowButtonDownFcn;
         hold(hAx.lit, 'on'); grid(hAx.lit, 'on');
         hPlt.lit_current = stem(hAx.lit, hit, hData.var.nLitPixel, 'r');
         
@@ -463,38 +342,35 @@ initFcn;
         hAx.lit.UserData = [hAx.lit.XLim; hAx.lit.YLim];
         updatePlotsFcn;
     end
+    %% Plot Functions
     function updatePlotsFcn(~,~)
-        if ~hData.bool.simulationMode 
-            hData.img.data = hData.img.dataCorrected;
-        else
-            hData.img.data = hData.img.dataSimulated;
-        end
+        updateImgData();
         hPlt.pnccd.CData = logS(hData.img.data);
         hPlt.pnccd.XData = (1:size(hData.img.data,2))-hData.var.center(2);
         hPlt.pnccd.YData = (1:size(hData.img.data,1))-hData.var.center(1);
         hAx.pnccd.CLim = iif(hData.bool.autoScale, ([nanmin(hData.img.data(:)),nanmax(hData.img.data(:))]), logS(hData.par.cLims));
         hAx.pnccd_CBar.TickLabels = iif(hData.bool.logScale, sprintf('10^{%.0g}\n', (hAx.pnccd_CBar.Ticks)), hAx.pnccd_CBar.Ticks);
         
-        hPlt.lit.XData = 1:numel(db.runInfo(run).nlit_smooth); 
+        hPlt.lit.XData = 1:numel(db.runInfo(run).nlit_smooth);
         hPlt.lit.YData = db.runInfo(run).nlit_smooth;
-        hPlt.lit_current.XData = hit; 
+        hPlt.lit_current.XData = hit;
         hPlt.lit_current.YData = hData.var.nLitPixel;
         
         hAx.pnccd.Title.String = sprintf('run #%03i - id %i - hit %i, R = %.0fnm', run, hData.trainId, hit , db.sizing(run).R(hit)*1e9);
         hAx.lit.Title.String = sprintf('%.3g lit pixel // %.3g photons', hData.var.nLitPixel, hData.var.nPhotonsOnDetector);
-%         scaleChangeFcn;
+        %         scaleChangeFcn;
         plotRings;
         
         hFig.main.Visible = 'on';
         drawnow limitrate;
     end
-
     function plotRings(~,~)
         if hData.bool.drawRings
             hold(hAx.pnccd, 'on');
-            hData.par.nRings = str2num_fast(hFig.main.nRings_edt.String);
-            hData.par.ringwidth = str2num_fast(hFig.main.ringWidth_edt.String);
-            hPlt.rings = draw_rings(hAx.pnccd, [hData.var.center(2),hData.var.center(1)], hData.par.nRings, [], hData.par.ringwidth);
+            hData.par.nRings = str2num_fast(hFig.main_uicontrols.nRings_edt.String);
+            hData.par.ringwidth = str2num_fast(hFig.main_uicontrols.ringWidth_edt.String);
+            hPlt.rings = draw_rings(hAx.pnccd, [0,0], hData.par.nRings, [], hData.par.ringwidth);
+            grid(hAx.pnccd, 'off');
             hold(hAx.pnccd, 'off');
         end
     end
@@ -517,19 +393,6 @@ initFcn;
             val = log10(val);
         end
     end
-    function thisWindowButtonDownFcn(src,~)
-        if strcmp(src.SelectionType, 'open')
-            if src.CurrentAxes==hAx.lit
-                %hFig.main.UserData.origMousePos = src.CurrentAxes.CurrentPoint;
-                %hit = round(hFig.main.UserData.origMousePos(2));
-                hit = round(src.CurrentAxes.CurrentPoint(2));
-                hFig.main_uicontrols.index_txt.String = sprintf('%i/%i', hit, numel(pnccd.trainid));
-                loadImageData;
-                updatePlotsFcn;
-                return
-            end
-        end
-    end
     function setNSteps(~,~)
         hData.var.nSteps = str2num_fast(hFig.main_uicontrols.nSteps_edt.String);
     end
@@ -544,36 +407,185 @@ initFcn;
             delete(hPlt.rings);
         end
     end
+    %% Load Data Functions
+    function loadImageData(~,~)
+        fprintf('Loading run #%03d hit %01d ...\n', run, hit)
+        % Get data from databases
+        hData.bool.simulationMode = false;
+        hData.bool.isCropped=false;
+        hData.img.input = pnccd.data(hit).image;
+        hData.trainId = pnccd.trainid(hit);
+        % Old correction needs to be made
+        if ~db.sizing(run).ok(hit); db.sizing(run).R(hit) = nan; end
+        hData.var.radiusInNm = db.sizing(run).R(hit);
+        hData.var.radiusInPixel = db.sizing(run).R(hit)*1e9/6;
+        hData.var.nLitPixel = db.runInfo(run).nlit_smooth(hit);
+        hData.var.nPhotonsOnDetector = nansum(hData.img.data(:));
+        
+        % Check if run was background subtracted (folder name ends with "_bg").
+        % Do Subtraction if not.
+        if ~strcmp(pnccdGUIPaths.pnccd(end-2:end-1),'bg')
+            hData.img.input = hData.img.input - pnccd.bg_corr;
+        end
+        % Custom masking
+        hData.img.input(hData.img.mask==0) = nan;
+        hData.img.mask = ~isnan(hData.img.input);
+        % Custom Gaps for different shifts if needed (not recommended)
+%         hData.par.addGapArray = [0 5 5 5 5 9];
+%         hData.par.addShiftArray = [0 -6 -2 0 0 2];
+        hData.par.addGapArray = [0 0 -2 -3 -1 1];
+        hData.par.addShiftArray = [0 0 -2 1 0 -1];
+        hData.par.addGap = hData.par.addGapArray(db.runInfo(run).shift);
+        hData.par.addShift = hData.par.addShiftArray(db.runInfo(run).shift);
+        hData.par.addCenter = -1*[1,1];
+        % Automatic correction of relative geometry (gap size and left/right
+        % shift) from calculated values based on the motor encoder values of
+        % the pnCCDs, and manual calibration for some images.
+        [hData.img.dataCorrected,hData.var.gapSize,hData.var.shiftSize,~,...
+            hData.var.center]=pnccdGeometryFcn(hData.img.input,db.runInfo,...
+            pnccd.run,hData.par.nPixelFull,hData.par.addGap,hData.par.addShift);
+        if ~isempty(db.center(run).center)
+            if hit <= numel(db.center(run).center)
+                if ~isempty(db.center(run).center(hit).data)
+                    hData.var.center = db.center(run).center(hit).data...
+                        + hData.par.addCenter;
+                    hData.img.dataCropped = centerAndCropFcn(...
+                        hData.img.dataCorrected, hData.var.center);
+                    hData.bool.isCropped=true;
+                    fprintf('...centered\t...cropped\n');
+                end
+            end
+        end
+        hData.shape = [];
+        if ~isempty(db.shape(run).shape)
+            if hit <= numel(db.shape(run).shape)
+%                 if ~isempty(db.shape(run).shape(hit).data)
+                    hData.shape = db.shape(run).shape(hit).data;
+                    [hData.img.dropletdensity, hData.img.support] = ...
+                        ellipsoid_density(hData.shape.a/2,hData.shape.b/2,...
+                        (hData.shape.a/2+hData.shape.b/2)/2,hData.shape.rot,...
+                        [513,513], [1024,1024]);
+                    fprintf('...shape found\t...got support & density\n');
+                    %% BEGIN: DETECTOR GEOMETRY CORRECTION
+                    %                     dataScatt = hData.img.dataCorrected;
+                    %                     simScatt = abs(ft2(hData.img.dropletdensity)).^2;
+                    %                     refineDetectorGeometry(dataScatt, simScatt)
+                    %% END: DETECTOR GEOMETRY CORRECTION
+%                 end
+            end
+        end
+        updateImgData();
+    end
+    function updateImgData(~,~)
+        if hData.bool.simulationMode, hData.img.data=hData.img.dataSimulated;
+        elseif hData.bool.isCropped, hData.img.data=hData.img.dataCropped;
+        else, hData.img.data=hData.img.dataCorrected;
+        end
+    end
+    function loadNextHit(src,evt,direction)
+        if nargin<3
+            switch src.String
+                case 43, direction = -1;
+                case 45, direction = 1;
+                otherwise
+                    error('Error in pnccdGUI/loadNextHit: direction not defined and caller function is not the "+" or "-" button callback.')
+            end
+        end
+        if hit+direction<1 || hit+direction>numel(pnccd.trainid)
+            loadNextFile(src,evt,hData.filepath, run+direction, direction);
+        else
+            hit = hit+direction;
+            hFig.main_uicontrols.index_txt.String = sprintf('%i/%i', hit, numel(pnccd.trainid));
+            loadImageData;
+        end
+        createPlots;
+    end
+    function loadNextFile(~,~,filepath,nextRun,direction)
+        %         fprintf('saving recon file ...'); drawnow;
+        %         save(fullfile(paths.recon, sprintf('r%04d_recon_%s.mat', run, db.runInfo(run).doping.dopant{:})), 'hRecon', '-v7.3');
+        %         fprintf('done!\n'); drawnow;
+        if ~exist('direction','var')
+            direction = 1;
+        end
+        
+        nextFile = fullfile(filepath, sprintf('%04i_hits.mat', nextRun));
+        while ~db.runInfo(nextRun).isData || ~exist(nextFile, 'file')
+            warning(['Run #%03d is not a data run and was not loaded.\n',...
+                'Trying next: run #%03d\n'], nextRun, nextRun+direction);
+            nextRun = nextRun + direction;
+            nextFile = fullfile(pnccdGUIPaths.pnccd, sprintf('%04i_hits.mat', nextRun));
+            if nextRun>489 || nextRun<200; return; end
+        end
+        fprintf('loading file %s\n', nextFile)
+        % Save previous data for faster loading of the last viewed file
+        [run, hPrevData.run] = swap(run, hPrevData.run);
+        [hit, hPrevData.hit] = swap(hit, hPrevData.hit);
+        [pnccd, hPrevData.pnccd] = swap(pnccd, hPrevData.pnccd);
+        [hRecon, hPrevData.hRecon] = swap(hRecon, hPrevData.hRecon);
+        [hData.filename, hPrevData.filename] = swap(hData.filename, hPrevData.filename);
+        
+        % Check if new path folder was selected
+        if ~strcmp(filepath, hData.filepath)
+            hData.filepath = filepath;
+            hPrevData.run = nan;
+        end
+        
+        % Check if requested run is stored in hPrevData, otherwise load it.
+        if run ~= nextRun
+            [pnccd, hData.filename, hData.var.nHits] = pnccd_load_run(nextRun, pnccdGUIPaths.pnccd);
+            run = pnccd.run;
+            %             hRecon = load_recon(nextrun, paths.recon);
+        end
+        hit = iif(direction>0,1,numel(db.runInfo(run).nlit_smooth));
+        loadImageData;
+    end
+    function getFileFcn(src,evt)
+        [fn, fp] = uigetfile(fullfile(pnccdGUIPaths.pnccd, hData.filename));
+        if isequal(fn,0)
+            disp('User selected Cancel')
+        else
+            pnccdGUIPaths.pnccd = fp;
+            hAx.pnccd.Title.String = sprintf('loading run #%si ...', fn(1:4)); drawnow;
+            nextrun = str2num_fast(fn(1:4));
+            loadNextFile(src, evt, fp, nextrun);
+            createPlots;
+        end
+    end
+    %% Centering und Shape Determination
     function centerImgFcn(~,~)
         hFig.main.Pointer = 'watch'; drawnow;
-        if isempty(hFig.centering) 
-            hFig.centering = figure(1010102); figure(hFig.main); 
+        if ~isgraphics(hFig.centering)
+            hFig.centering = figure(1010102); figure(hFig.main);
+            hFig.centering.KeyPressFcn = @centerkeyfun;
+            hFig.centering.Name = 'centering';
         end
-        if ~isvalid(hFig.centering) || ~isgraphics(hFig.centering)
-            hFig.centering = figure(1010102); figure(hFig.main); 
+        %         if hit<=numel(db.center(run).center)
+        %             if isfield(db.center(run).center(hit),'data')
+        %                 if ~isempty(db.center(run).center(hit).data)
+        %                     hData.var.center = db.center(run).center(hit).data;
+        %                     hData.var.center = hData.var.center + [hData.par.addGap/2, -hData.par.addShift/2];
+        %                     hFig.main.Pointer = 'arrow'; drawnow;
+        %                     %                     centrosymmetric
+        %                     updatePlotsFcn;
+        %                     return
+        %                 end
+        %             end
+        %         end
+        if any( (hData.var.center-size(hData.img.dataCorrected)/2) > 100)
+            hData.var.center=size(hData.img.dataCorrected)/2;
         end
-        hFig.centering.KeyPressFcn = @centerkeyfun;
-        hFig.centering.Name = 'centering';
-%         if hit<=numel(db.center(run).center)
-%             if isfield(db.center(run).center(hit),'data')
-%                 if ~isempty(db.center(run).center(hit).data)
-%                     hData.var.center = db.center(run).center(hit).data;
-%                     hData.var.center = hData.var.center + [hData.par.addGap/2, -hData.par.addShift/2];
-%                     hFig.main.Pointer = 'arrow'; drawnow;
-%                     %                     centrosymmetric
-%                     updatePlotsFcn;
-%                     return
-%                 end
-%             end
-%         end
         [hData.var.center, hAx.centering, hPlt.centering] = findCenterFcn(...
-            hData.img.data,'figure',hFig.centering,'center',...
+            hData.img.dataCorrected,'figure',hFig.centering,'center',...
             hData.var.center,'nWedges',16,'movMeanPixel',3,'rMin',70,...
             'rMax',160,'displayflag',1,'nIterations',7);
         db.center(run).center(hit).data = hData.var.center;
         hFig.main.Pointer = 'arrow'; drawnow;
+        hData.img.dataCropped = centerAndCropFcn(...
+            hData.img.dataCorrected, hData.var.center);
+        hData.bool.isCropped=true;
+        updateImgData();
         updatePlotsFcn();
-        %         INCLUDE THIS AGAIN!
+        %% INCLUDE THIS AGAIN!
 %         save(fullfile(thisPath, 'db/db.mat'), 'db');
         fprintf('    -> centered\n')
     end
@@ -591,7 +603,7 @@ initFcn;
                 hData.var.center(2)=hData.var.center(2)+dc;
             case 's'
                 db.center(run).center(hit).data = hData.var.center;
-%                 save('E:\XFEL2019_He\db_center.mat','db.center')
+                %                 save('E:\XFEL2019_He\db_center.mat','db.center')
             case {'1', 'numpad1'}
                 centerImgFcn;
                 figure(1010102);
@@ -612,25 +624,29 @@ initFcn;
     end
     function findShapeFcn(~,~)
         hFig.main.Pointer = 'watch'; drawnow;
-        if isempty(hFig.shape1); hFig.shape1 = figure(1010103); figure(hFig.main); end
-        if ~isvalid(hFig.shape1); hFig.shape1 = figure(1010103); figure(hFig.main); end
-        if isempty(hFig.shape2); hFig.shape2 = figure(1010104); figure(hFig.main); end
-        if ~isvalid(hFig.shape2); hFig.shape2 = figure(1010104); figure(hFig.main); end
-        if isempty(hAx.shape); hAx.shape=mysubplot(1,2,2,'parent',hFig.shape2); end
+        if ~isgraphics(hFig.shape1)
+            hFig.shape1 = figure(1010103);
+            hFig.shape1.Name = 'shape figure #1';
+        end
+        if ~isgraphics(hFig.shape2)
+            hFig.shape2 = figure(1010104); 
+            hFig.shape2.Name = 'shape figure #2';
+        end
+        if ~isgraphics(hAx.shape)
+            hAx.shape=mysubplot(1,2,2,'parent',hFig.shape2); 
+        end
         
-        hFig.shape1.Name = 'shape figure #1';
-        hFig.shape2.Name = 'shape figure #2';
-        hData.img.dataCorrected = centerAndCropFcn(hData.img.data, hData.var.center);
+%         hData.img.dataCropped = centerAndCropFcn(hData.img.data, hData.var.center);
         %         hData.img.dataCorrected(hData.img.dataCorrected<-0.1) = nan;
         %         hData.img.dataCorrected(hData.img.dataCorrected>50) = nan;
         %         hData.var.radiusInPixel = 296/6;
         %         if ~isfield(db.shape(run).shape(hit), 'data')
-        [hData.shape, hAx.shape] = findShapeFit(hData.img.dataCorrected, hData.var.radiusInPixel, 'fig1', hFig.shape1, 'fig2', hFig.shape2, 'ax', hAx.hData.shape);
+        [hData.shape, hAx.shape] = findShapeFit(hData.img.dataCropped, hData.var.radiusInPixel, 'fig1', hFig.shape1, 'fig2', hFig.shape2, 'ax', hAx.shape);
         db.shape(run).shape(hit).data = hData.shape;
         %         end
         db.shape(run).shape(hit).R = 6*(hData.shape.a/2 + hData.shape.b/2)/2;
         db.shape(run).shape(hit).ar = iif(hData.shape.a>hData.shape.b, hData.shape.a/hData.shape.b, hData.shape.b/hData.shape.a);
-%         save(fullfile(paths.db, 'db_shape.mat'),'db.shape')
+        %         save(fullfile(paths.db, 'db_shape.mat'),'db.shape')
         [hData.img.dropletdensity, hData.img.support] = ellipsoid_density(hData.shape.a/2, hData.shape.b/2, (hData.shape.a/2+hData.shape.b/2)/2, hData.shape.rot, [513,513], [1024,1024]);
         fprintf('ellipse parameters: \n[a, b, rot] = [%.2fpx, %.2fpx, %.2frad]\n', hData.shape.a/2,hData.shape.b/2,hData.shape.rot)
         fprintf('[a, b, rot] = [%.2fnm, %.2fnm, %.2fdegree]\n', hData.shape.a/2*6,hData.shape.b/2*6,hData.shape.rot/2/pi*360)
@@ -639,14 +655,39 @@ initFcn;
         %         hData.img.support = imerode(hData.img.support,strel('disk',1,0));
         %         hData.img.support = imopen(hData.img.support,strel('disk',4,0));
         figure(4949494); clf
-        mysubplot(1,2,1); imagesc(hData.img.support); title('reconstruction support');
-        xlim(size(hData.img.support,2)/2+[-1,1]*hData.shape.a); ylim(size(hData.img.support,1)/2+[-1,1]*hData.shape.a);
-        mysubplot(1,2,2); imagesc(hData.img.dropletdensity); title('calculated droplet density');
+        hAxSupport=mysubplot(1,2,1); imagesc(hData.img.support); title('reconstruction support');
+        hAxDensity=mysubplot(1,2,2); imagesc(hData.img.dropletdensity); title('calculated droplet density');
+        linkaxes([hAxSupport,hAxDensity],'xy');
         xlim(size(hData.img.support,2)/2+[-1,1]*hData.shape.a); ylim(size(hData.img.support,1)/2+[-1,1]*hData.shape.a);
         figure(hFig.main)
         hFig.main.Pointer = 'arrow'; drawnow;
         updatePlotsFcn;
         fprintf('    -> shape found\n')
+    end
+    %% Reconstruction Functions
+    function initIPR(~,~)
+        hFig.main.Pointer = 'watch'; drawnow limitrate;
+        clear hIPR;
+        hIPR = IPR(hData.img.dataCropped, ...%             'objectHandle', hIPR, ...
+            'support0', hData.img.support, ...
+            'support_radius', db.sizing(run).R(hit)*1e9/6, ...
+            'rho0', hData.img.dropletdensity,...
+            'parentfig', hFig.main);
+        hFig.main.Pointer = 'arrow'; drawnow limitrate;
+        hIPR.figureArray.Pointer = 'arrow'; drawnow limitrate;
+        %         figure(hFig.main)
+    end
+    function initIPRsim(~,~)
+        hFig.main.Pointer = 'watch'; drawnow limitrate;
+        clear hIPR;
+        hIPR = IPR(hSimu.simData.scatt1, ...%             'objectHandle', hIPR, ...
+            'support0', hSimu.simData.droplet>0, ...
+            'support_radius', (hSimu.simParameter.aDrop+hSimu.simParameter.bDrop)/2/6, ...
+            'clims_scatt', hAx.pnccd.CLim, ...
+            'rho0', hSimu.simData.droplet,...
+            'parentfig', hFig.main);
+        hIPR.plotAll;
+        hFig.main.Pointer = 'arrow'; drawnow limitrate;
     end
     function oneShotRecon(~,~)
         DENSITY = fftshift(fft2(fftshift(hData.img.dropletdensity)));
@@ -678,31 +719,7 @@ initFcn;
         subplot(223); imagesc((angle(DENSITY)))
         subplot(224); imagesc(log10(abs(ONEShot).^2), [-2,2]);
     end
-    function initIPR(~,~)
-        hFig.main.Pointer = 'watch'; drawnow limitrate;
-        clear hIPR;
-        hIPR = IPR(hData.img.dataCorrected, ...%             'objectHandle', hIPR, ...
-            'support', hData.img.support, ...
-            'support_radius', db.sizing(run).R(hit)*1e9/6, ...%             'clims_scatt', hAx.pnccd.CLim, ...
-            'rho0', hData.img.dropletdensity,...
-            'parentfig', hFig.main);
-        hIPR.plotAll;
-        hFig.main.Pointer = 'arrow'; drawnow limitrate;
-        hIPR.figureArray.Pointer = 'arrow'; drawnow limitrate;
-%         figure(hFig.main)
-    end
-    function initIPRsim(~,~)
-        hFig.main.Pointer = 'watch'; drawnow limitrate;
-        clear hIPR;
-        hIPR = IPR(hSimu.simData.scatt1, ...%             'objectHandle', hIPR, ...
-            'support', hSimu.simData.droplet>0, ...
-            'support_radius', (hSimu.simParameter.aDrop+hSimu.simParameter.bDrop)/2/6, ...
-            'clims_scatt', hAx.pnccd.CLim, ...
-            'rho0', hSimu.simData.droplet,...
-            'parentfig', hFig.main);
-        hIPR.plotAll;
-        hFig.main.Pointer = 'arrow'; drawnow limitrate;
-    end
+    %% Simulation Functions
     function startSimulation(~,~)
         fprintf('Starting simulation ...\n')
         hData.bool.simulationMode = true;
@@ -713,11 +730,12 @@ initFcn;
             hFig.main);
         fprintf('\tSimulation started!\n')
     end
+    %% Process all Data
     function reconANDsave(~,~)
-%         try d = load(fullfile(paths.db, 'db_recon.mat')); db_recon = d.db_recon; clear d;
-%         catch; fprintf('could not load db_recon\n'); end
+        %         try d = load(fullfile(paths.db, 'db_recon.mat')); db_recon = d.db_recon; clear d;
+        %         catch; fprintf('could not load db_recon\n'); end
         while true
-%             try
+            %             try
             if strcmp(db.runInfo(run).doping.dopant,'none')
                 fprintf('run %i is not doped. Continuing...\n',run)
                 loadNextFile([],[],pnccdGUIPaths.pnccd, run+1,1);
@@ -733,8 +751,8 @@ initFcn;
                 loadNextHit([],[],1);
                 continue
             end
-%             centerImgFcn;
-%             findShapeFcn;
+            %             centerImgFcn;
+            %             findShapeFcn;
             
             initIPR();
             hIPR.addReconPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
@@ -742,11 +760,10 @@ initFcn;
             hIPR.startRecon();
             print(figure(20000002),fullfile('C:\Users\Toli\Google Drive\dissertation\2.helium\xfel-img\2020-09-07',...
                 sprintf('run%04d_hit%04d_dcdi.png',run,hit)),'-dpng')
-%         end
+            %         end
             loadNextHit([],[],1)
         end
     end % reconAndSave
-
 %% Methods - NOT IN USE
 %     function iterateIPR(method)
 %         for i=1:hData.var.nLoops
@@ -783,7 +800,7 @@ initFcn;
 %                 end
 %                 %             centerImgFcn;
 %                 %             findShapeFcn;
-% 
+%
 %                 initIPR();
 %                 hIPR.addReconPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
 %                 hIPR.addReconPlan('nthio',hData.var.nSteps,hData.var.nLoops);
@@ -794,12 +811,12 @@ initFcn;
 %             loadNextHit([],[],1)
 %         end
 %     end
-            
+
 %             %                 startDCDI
 %             %                 startHIO
 %             startHPR
 %             %                 finishReconstruction
-%             
+%
 %             %%%% FIGURES %%%%
 %             hSaveObj.fig = figure(601); hSaveObj.fig.Name = 'save figure #1'; clf(hSaveObj.fig);
 %             hSaveObj.fig.PaperSize = [29.6774   20.9840].*[4/3,1];
@@ -811,11 +828,11 @@ initFcn;
 %             hSaveObj.fig2.PaperSize = [29.6774   20.9840];
 %             hSaveObj.fig2.PaperPosition = [0,0,hSaveObj.fig2.PaperSize];
 %             hSaveObj.ax2 = axes('parent', hSaveObj.fig2);
-%             
+%
 %             hIPR.ws = hIPR.ws .* hIPR.support;
 %             hIPR.oneshot = hIPR.oneshot .* hIPR.support;
 %             %                 hIPR.density = hIPR.density .* mode( real(hIPR.w(hIPR.support>0))./hIPR.density(hIPR.support>0) );
-%             
+%
 %             % scattering image
 %             hSaveObj.ax(1) = mysubplot(2,4,2, 'parent', hSaveObj.fig);
 %             hSaveObj.img(1) = imagesc(hIPR.plt.int(2).img.CData, ...
@@ -825,7 +842,7 @@ initFcn;
 %             colormap(hSaveObj.ax(1), imorgen);
 %             hSaveObj.ax(1).YLabel.String = 'scattering angle';
 %             hSaveObj.ax(1).Title.String = 'measured intensity';
-%             
+%
 %             % reconstructed intensity
 %             hSaveObj.ax(2) = mysubplot(2,4,6, 'parent', hSaveObj.fig);
 %             hSaveObj.img(2) = imagesc(hIPR.plt.int(1).img.CData, ...
@@ -835,7 +852,7 @@ initFcn;
 %             colormap(hSaveObj.ax(2), imorgen);
 %             hSaveObj.ax(2).YLabel.String = 'scattering angle';
 %             hSaveObj.ax(2).Title.String = 'reconstructed intensity';
-%             
+%
 %             % real part of reconstruction
 %             hSaveObj.ax(3) = mysubplot(2,4,3, 'parent', hSaveObj.fig);
 %             hSaveObj.img(3) = imagesc(real(hIPR.ws)-hIPR.density*hIPR.subscale, ...
@@ -847,7 +864,7 @@ initFcn;
 %                 'CLim', [-1,1]*max(abs(hSaveObj.img(3).CData(:))));
 %             hSaveObj.ax(3).YLabel.String = 'nanometer';
 %             hSaveObj.ax(3).Title.String = 'real part (shape substracted)';
-%             
+%
 %             % imag part of reconstruction
 %             hSaveObj.ax(4) = mysubplot(2,4,7, 'parent', hSaveObj.fig);
 %             hSaveObj.img(4) = imagesc(imag(hIPR.w), ...
@@ -859,7 +876,7 @@ initFcn;
 %                 'CLim', [-1,1]*max(abs(hSaveObj.img(4).CData(:))));
 %             hSaveObj.ax(4).YLabel.String = 'nanometer';
 %             hSaveObj.ax(4).Title.String = 'imaginary part';
-%             
+%
 %             % real oneshot part of reconstruction
 %             hSaveObj.ax(5) = mysubplot(2,4,4, 'parent', hSaveObj.fig);
 %             %                 hSaveobj.img(5) = imagesc(imag(hIPR.ws), ...
@@ -873,8 +890,8 @@ initFcn;
 %             hSaveObj.ax(5).YLabel.String = 'nanometer';
 %             %                 hSaveobj.ax(5).Title.String = 'reconstructed imag part';
 %             hSaveObj.ax(5).Title.String = 'oneshot - real part';
-%             
-%             
+%
+%
 %             % imaginary oneshot of reconstruction
 %             hSaveObj.ax(6) = mysubplot(2,4,8, 'parent', hSaveObj.fig);
 %             %                 hSaveobj.img(6) = imagesc(angle(hIPR.ws), ...
@@ -888,7 +905,7 @@ initFcn;
 %             hSaveObj.ax(6).YLabel.String = 'nanometer';
 %             %                 hSaveobj.ax(6).Title.String = 'reconstructed phase';
 %             hSaveObj.ax(6).Title.String = 'oneshot - imaginary part';
-%             
+%
 %             % shape reconstruction
 %             hSaveObj.ax(7) = mysubplot(2,4,5, 'parent', hSaveObj.fig);
 %             hSaveObj.img(7) = imagesc(hAx.shape.Children(5).CData, ...
@@ -901,7 +918,7 @@ initFcn;
 %                 512+db.sizing(run).R(hit)*1e9/6*3]);
 %             hSaveObj.ax(7).YLabel.String = 'pixel';
 %             hSaveObj.ax(7).Title.String = 'reconstructed shape';
-%             
+%
 %             % data table
 %             hSaveObj.uit.Data = {'run #', run;...
 %                 'train id', hData.trainId;...
@@ -937,7 +954,7 @@ initFcn;
 %             %                     'dopant', sprintf('%s', db.runInfo(run).doping.dopant{:});...
 %             %                     'depletion', sprintf('%d %%', db.runInfo(run).doping.depletion);...
 %             %                     };
-%             
+%
 %             % saving
 %             subpath = sprintf('%s%\\02.0fK_%02.0fbar', db.runInfo(run).doping.dopant{:},...
 %                 round(db.runInfo(run).source.T),...
@@ -946,7 +963,7 @@ initFcn;
 %             if ~exist(savepath, 'dir'); mkdir(savepath); end
 %             sname = sprintf('r%04d_id%d_hit%04d.png', run, hData.trainId, hit);
 %             saveas(hSaveObj.fig, fullfile(savepath,sname));
-%             
+%
 %             hSaveObj.img2 = imagesc(hIPR.support.*abs(hIPR.oneshot-hIPR.density*~strcmp(db.runInfo(run).doping.dopant,'none')),...
 %                 'XData', hIPR.plt.rec(2).img.XData, ...
 %                 'YData', hIPR.plt.rec(2).img.YData, ...
@@ -958,13 +975,13 @@ initFcn;
 %             if ~exist(savepath, 'dir'); mkdir(savepath); end
 %             sname = sprintf('r%04d_id%d_hit%04d_modulus.png', run, hData.trainId, hit);
 %             saveas(hSaveObj.fig2, fullfile(savepath, sname))
-%             
+%
 %             colormap(hSaveObj.ax2, wjet); drawnow;
 %             savepath = fullfile('E:\XFEL2019_He\reconstructions\png_recon_wjet\',subpath);
 %             if ~exist(savepath, 'dir'); mkdir(savepath); end
 %             sname = sprintf('r%04d_id%d_hit%04d_modulus.png', run, hData.trainId, hit);
 %             saveas(hSaveObj.fig2, fullfile(savepath, sname))
-%             
+%
 %             hRecon(hit).recon = (hIPR.ws); %#ok<*AGROW>
 %             hRecon(hit).W = (hIPR.W);
 %             hRecon(hit).scatt = ( exp(1i*hIPR.PHASE) .* ( ( hIPR.INT .* (1-hIPR.MASK) ) + ( hIPR.SCATT.* hIPR.MASK ) ) );

@@ -8,20 +8,15 @@ function obj = initPhase(obj)
         obj.rho0 = obj.rho0.*obj.support0;
         obj.rho0 = obj.rho0/norm(obj.rho0, 'fro');
     end
+    
+    obj.rho0 = obj.rho0 / norm(obj.rho0, 'fro');
     obj.W = ft2(gpuArray(complex(single(obj.rho0))));
-    % normalize on integral in masked area
-    obj.scalingfactor = norm(obj.AMP0.*obj.MASK, 'fro') ...
-        / norm(abs(obj.W).*obj.MASK, 'fro');
-
-%     obj.rho0 = obj.rho0 * obj.scalingfactor;
-%     obj.delta = obj.delta.*obj.rho0;
-%     obj.rho = obj.rho0 * obj.alpha;
-%     obj.rho = obj.rho0;
-
-    obj.W = obj.W * obj.scalingfactor;
-    obj.AMP = abs(obj.W);
     obj.PHASE = angle(obj.W).*(~obj.random_phase)  ...
         + (2*pi*rand(obj.imgsize)-pi)*obj.random_phase;
+    % normalize on integral in masked area
+    obj.W = obj.W * norm(obj.AMP0.*obj.MASK, 'fro') ...
+        / norm(abs(obj.W).*obj.MASK, 'fro');
+    obj.AMP = abs(obj.W);
     obj.WS = ( obj.AMP0.*obj.MASK + obj.AMP.*(~obj.MASK) ) .* exp(1i*obj.PHASE);
 
     obj.ws = ift2(obj.WS);
@@ -31,8 +26,7 @@ function obj = initPhase(obj)
     
     obj.rho0 = obj.rho0 / norm(obj.rho0, 'fro') * norm(obj.amp, 'fro');
     obj.rho = obj.rho0 * obj.alpha;
-%     obj.delta = obj.delta.*obj.rho0;
-    obj.delta = obj.deltaFactor*obj.noise;
+    obj.delta = obj.deltaFactor * obj.noise;
     
     fprintf('\tbin factor = %.3g\n', obj.binFactor)
     fprintf('\talpha = %.3g\n', obj.alpha)

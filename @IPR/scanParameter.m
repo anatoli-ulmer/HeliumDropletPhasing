@@ -18,9 +18,9 @@ function obj = scanParameter(obj, sVar, sArray, savePath)
     thisReconPlan = obj.reconPlan;
     for i=1:nPoints
         %% set parameter
-        obj=resetIPR(obj);
-        obj.(sVar) = sArray(i);
-        fprintf('\t%s = %.3g\n', sVar, sArray(i))
+        obj=resetIPR(obj,sVar,sArray(i));
+%         obj.(sVar) = sArray(i);
+%         fprintf('\t%s = %.3g\n', sVar, sArray(i))
         %% run reconstruction
 %         obj.iterate(nSteps, method);
         obj.reconPlan=thisReconPlan;
@@ -36,8 +36,8 @@ function obj = scanParameter(obj, sVar, sArray, savePath)
         scanData(i).WS = obj.WS;
         %% plot images in array
         fData=log10(abs(obj.WS));
-        fPlotRange=[-2,2];
-        rData=real(obj.w-obj.rho);
+        fPlotRange=obj.clims_scatt;
+        rData=real(obj.w - obj.rho0);
         rPlotRange=[-1,1]*max(abs(rData(:)));
         gObj.hAxArrayF(i)=nexttile(gObj.hTLF);
         gObj.hAxArrayR(i)=nexttile(gObj.hTLR);

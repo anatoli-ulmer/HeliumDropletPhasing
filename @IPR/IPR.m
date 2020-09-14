@@ -8,7 +8,7 @@ classdef IPR < handle
         MASK                                                                    % binary mask for data in Fourier Space
         RMASK                                                                   % binary radial mask, applied if (constraint_RMask == true)
         wedgeMask                                                               % binary wedge like mask for stray light, applied if (constraint_wedgeMask == true)
-        gapMask
+        gapMask                                                                 % binary gap mask for stray light, applied if (constraint_gapMask == true)
         RMASK_smooth                                                            % single valued radial mask with smooth transisiton to zero values, applied if (constraint_RMask == true), using convolution kernel width 'RMASK_smoothPix'
         W                                                                       % current complex valued reconstruction after applying Fourier space constraints
         WS                                                                      % current complex valued reconstruction before applying Fourier space constraints
@@ -23,11 +23,10 @@ classdef IPR < handle
         rho                                                                     % current droplet density
         rho0                                                                    % start droplet density
         rati
-        scalingfactor = nan(1.0, 'single', 'gpuArray');
         oneshot                                                                 % complex valued Real space reconstruction after one step
-        support_dilate = false;                                                 % boolian switch - dilate start Support
-        support_dilateFactor = 2 * ones(1, 'single', 'gpuArray')                % factor for kernel for dlating the start Support, applied if (support_dilate == true)
-        support_dilateMethod = 'disk';                                          % kernel method for dilating the start Support, applied if (support_dilate == true)
+        support_dilate = false;                                                 % boolian switch - dilate start Support // see support_dilateFactor, support_dilateMethod
+        support_dilateFactor = 2 * ones(1, 'single', 'gpuArray')                % factor for kernel for dlating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateMethod
+        support_dilateMethod = 'disk';                                          % kernel method for dilating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateFactor
         %% Reconstruction parameter
         reconPlan
         errors = nan(5,1, 'single', 'gpuArray');
@@ -94,45 +93,17 @@ classdef IPR < handle
         function obj = IPR(pnCCDimg, varargin)                                  
             % Main figure for iterative phase retrieval. Copies the
             % KeyPressFcn Callback from Calling figure.
-            
-            obj.configIPR();    % load standard values from config file
-            
-            if exist('varargin','var')
-                L = length(varargin);
-                if rem(L,2) ~= 0, error('Parameters/Values must come in pairs.'); end
-                for ni = 1:2:L
-                    switch lower(varargin{ni})
-                        case 'objecthandle', obj = varargin{ni+1};
-                        case 'parentfig', obj.parentfig = varargin{ni+1};
-                            
-                        case 'clims_scatt', obj.clims_scatt = single(varargin{ni+1});
-                        case 'clims_recon', obj.clims_recon = single(varargin{ni+1});
-                        case 'substract_shape', obj.substract_shape = single(varargin{ni+1});
-                        case 'normalize_shape', obj.normalize_shape = single(varargin{ni+1});
-                        case 'reconpart', obj.reconpart = varargin{ni+1};
-                        case 'reconrange', obj.reconrange = varargin{ni+1};
-                        case 'rec_cm', obj.rec_cm = varargin{ni+1};
-                        case 'int_cm', obj.int_cm = varargin{ni+1};
-                            
-                        case 'binfactor', obj.binFactor = single(varargin{ni+1});
-                        case 'phase', obj.PHASE = single(varargin{ni+1});
-                        case 'mask', obj.MASK = logical(varargin{ni+1});
-                        case 'support', obj.support0 = single(varargin{ni+1});
-                        case 'support_radius', obj.support_radius = single(varargin{ni+1});
-                        case 'rho0', obj.rho0 = single(varargin{ni+1});
-                        case 'center', obj.center = single(varargin{ni+1});
-                        case 'rmin', obj.masking.rmin = single(varargin{ni+1});
-                        case 'rmax', obj.masking.rmax = single(varargin{ni+1});
-                        case 'beta', obj.beta0 = single(varargin{ni+1});
-                        case 'random_phase', obj.random_phase = varargin{ni+1};
-                        case 'constraint_real', obj.constraint_real = varargin{ni+1};
-                        case 'constraint_pos', obj.constraint_pos = varargin{ni+1};
-                        case 'constraint_shape', obj.constraint_shape = varargin{ni+1};
-                    end
-                end
+            if mod(numel(varargin),2)~=0
+                error('Optional arguments must come in name-value-pairs.')
             end
-            obj = initIPR(obj, pnCCDimg);
-            obj.plotAll;
+            % load standard values from config file
+            obj.configIPR();
+            % overwrite data by variable input arguments
+            for i=1:2:numel(varargin)
+                obj.(varargin{i})=varargin{i+1};
+            end
+            % init
+            obj.initIPR(pnCCDimg);
         end
         
         %% DECLARATION
@@ -142,7 +113,7 @@ classdef IPR < handle
         obj = initMask(obj)                                                     % initialize masks
         obj = initPlots(obj)                                                    % generate figure and plot objects
         obj = resizeData(obj)                                                   % rebin and resize data
-        obj = resetIPR(obj)                                                     % reset variables to starting values
+        obj = resetIPR(obj,varargin)                                            % reset variables to starting values
         [noise, noiseMatrix, NOISEMatrix] = calcNoise(AMP0)                     % calculate noise amplitude
         
         obj = addReconPlan(obj, method, nSteps, nLoops)

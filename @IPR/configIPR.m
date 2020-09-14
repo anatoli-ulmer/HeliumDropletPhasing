@@ -19,7 +19,7 @@ function obj = configIPR(obj)
 
     %% init parameter
     obj.binFactor                       = single(1/2);      	% bin image before phasing (e.g. 1024px * 0.5 = 512px)
-    obj.binMethod                       = 'bilinear';       	% method for imresize (see documentation)
+    obj.binMethod                       = 'bicubic';       	% method for imresize (see documentation)
     obj.masking.dilateFactor            = double(1);        	% IF dilateMask: dilate by px
     obj.support_dilateFactor            = double(1);
     obj.support_dilateMethod            = 'disk';
