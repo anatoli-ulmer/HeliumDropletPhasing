@@ -10,7 +10,7 @@ function obj = initPhase(obj)
     end
     
     obj.rho0 = obj.rho0 / norm(obj.rho0, 'fro');
-    obj.W = ft2(gpuArray(complex(single(obj.rho0))));
+    obj.W = ft2((complex(single(obj.rho0))));
     obj.PHASE = angle(obj.W).*(~obj.random_phase)  ...
         + (2*pi*rand(obj.imgsize)-pi)*obj.random_phase;
     % normalize on integral in masked area

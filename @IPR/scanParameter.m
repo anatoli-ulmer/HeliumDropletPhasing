@@ -18,7 +18,8 @@ function obj = scanParameter(obj, sVar, sArray, savePath)
     thisReconPlan = obj.reconPlan;
     for i=1:nPoints
         %% set parameter
-        obj=resetIPR(obj,sVar,sArray(i));
+        obj=initIPR(obj,[],sVar,sArray(i));
+%         obj=resetIPR(obj,sVar,sArray(i));
 %         obj.(sVar) = sArray(i);
 %         fprintf('\t%s = %.3g\n', sVar, sArray(i))
         %% run reconstruction

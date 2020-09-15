@@ -1,4 +1,5 @@
 function obj = iterate(obj, nSteps, method)
+    % preallocating space for error metrics
     obj.errors=[obj.errors,nan(size(obj.errors,1),nSteps,'single','gpuArray')];
     
     for i=1:nSteps
@@ -14,12 +15,10 @@ function obj = iterate(obj, nSteps, method)
         obj.WS = projectorModulus(obj.AMP, obj.AMP0, obj.PHASE, obj.MASK);
         obj.ws = ift2(obj.WS);
         
-%         fprintf('real space integral: %.3g, Reciprocal space integral: %.3g\nmask sum %.3g\n',...
-%             sum(abs(obj.ws(:)).^2), sum(abs(obj.WS(:)).^2),sum(obj.MASK(:)));
         obj = applyConstraints(obj, method);
 
-        obj.errors(:,obj.nTotal+1) = ...
-            calcError(obj.ws, obj.rho, obj.support0, obj.AMP, obj.AMP0, obj.MASK);
+        obj.errors(:,obj.nTotal) = ...
+            calcError(obj.ws, obj.rho, obj.support, obj.AMP, obj.AMP0, obj.MASK);
 
         if mod(obj.nTotal, obj.nStepsUpdatePlot) == 0
             obj.plotAll;

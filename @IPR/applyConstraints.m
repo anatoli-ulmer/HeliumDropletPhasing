@@ -1,6 +1,4 @@
 function obj = applyConstraints(obj, method)
-    
-    obj.support = (obj.support0>0);
 
     if obj.constraint_real
         obj.ws = real(obj.ws); 

@@ -176,7 +176,7 @@ initFcn;
                 hIPR.scanParameter('delta', (0:1:10)*hIPR.noise, fullfile(...
                     pnccdGUIPaths.img, sprintf('run%04d-hit%04d',run,hit)) );
             case {'r','numpad0'}
-                hIPR.resetIPR;
+                hIPR.resetIPR();
                 %             otherwise, disp(evt.Key);
         end
         unregisterKeys(hFig.main);
