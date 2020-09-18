@@ -24,12 +24,13 @@ classdef IPR < handle
         rho0                                                                    % start droplet density
         rati
         oneshot                                                                 % complex valued Real space reconstruction after one step
-        support_dilate = false;                                                 % boolian switch - dilate start Support // see support_dilateFactor, support_dilateMethod
+        support_dilate = false                                                  % boolian switch - dilate start Support // see support_dilateFactor, support_dilateMethod
         support_dilateFactor = 2 * ones(1, 'single', 'gpuArray')                % factor for kernel for dlating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateMethod
         support_dilateMethod = 'disk';                                          % kernel method for dilating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateFactor
+        dropletOutline
         %% Reconstruction parameter
         reconPlan
-        errors = nan(5,1, 'single', 'gpuArray');
+        errors = nan(5,1, 'single', 'gpuArray')
         noise = gpuArray(single(1.0))                                           % noise amplitude estimation value, noise = rms(noiseMatrix) = rms(NOISEMatrix)
         noiseMatrix                                                             % noise amplitude estimation matrix in Real space
         NOISEMatrix                                                             % noise amplitude estimation matrix in Fourier space
@@ -37,16 +38,15 @@ classdef IPR < handle
         beta0 = 0.9*ones(1, 'single', 'gpuArray')
         beta = 0.9*ones(1, 'single', 'gpuArray')
         support_radius = 70*ones(1, 'single', 'gpuArray')
-        nTotal = ones(1, 'uint32');
+        nTotal = ones(1, 'uint32')
         random_phase = false;
         alpha = 1.0 * ones(1, 'single', 'gpuArray')
         delta = 0.1 * ones(1, 'single', 'gpuArray')
         deltaFactor = 5*ones(1, 'single', 'gpuArray')
-        deltaArray
         phaseMin = -Inf * ones(1, 'single', 'gpuArray')
-        mixScatt = false;
+        mixScatt = false
         masking
-        doERstep = false;
+        doERstep = false
         %% image properties
         center% = nan(1,2, 'single', 'gpuAqrray');
         imgsize% = ones(1,2, 'single', 'gpuAqrray');
@@ -117,9 +117,10 @@ classdef IPR < handle
         [noise, noiseMatrix, NOISEMatrix] = calcNoise(AMP0)                     % calculate noise amplitude
         
         obj = addReconPlan(obj, method, nSteps, nLoops)
-        obj = startRecon(obj)
+        obj = startRecon(obj, method, nSteps, nLoops)
         obj = iterate(obj, nSteps, method)
         obj = applyConstraints(obj, method)                                             
+        errors = calcErrors(ws,rho,support,W,AMP0,MASK)
         rho = normalizeDensity(ws, support, rho0, alpha)
         WS = projectorModulus(AMP, AMP0, PHASE, MASK)
         obj = scanParameter(obj, sVar, sArray, savePath)        % scan parameter and save images

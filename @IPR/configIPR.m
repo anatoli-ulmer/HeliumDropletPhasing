@@ -37,16 +37,16 @@ function obj = configIPR(obj)
     obj.beta0                           = single(0.9);          % phasing parameter; should be between 0.5 and 1.0
     obj.alpha                           = single(1);            % 0.84 in Tanyag2015
     obj.delta                           = 1-obj.alpha;          % IF constraint_shape; DCDI parameter: max deviation from calculated rho
-    obj.deltaFactor                     = 5;                    % Threshold multiplier for noise threshold
+    obj.deltaFactor                     = 8;                    % Threshold multiplier for noise threshold
     obj.phaseMin                        = single(-Inf);         % DCDI parameter: min phase value; helps convergence behaviour
     obj.mixScatt                        = single(0.1);          % IF constraint_mixscatt: share of scattering in Fourier domain
 
     %% plot parameter
     obj.nStepsUpdatePlot                = Inf;
     obj.int_cm                          = 'imorgen';            % colormap index for Fourier domain (dropdown menu)
-    obj.rec_cm                          = 'b2r';                % colormap for Real domain (dropdown menu)
+    obj.rec_cm                          = 'wjet';                % colormap for Real domain (dropdown menu)
     obj.clims_scatt                     = ([-1,3]);             % colormap limits for Fourier domain (log10 scale!)
-    obj.reconrange                      = 3;                    % range index for color map scaling (dropdown menu)
+    obj.reconrange                      = 2;                    % range index for color map scaling (dropdown menu)
     obj.intpart                         = 1;
     obj.reconpart                       = 'abs';                % 'real' | 'imag' | 'abs' | 'angle' -  filter for Real space image
     obj.normalize_shape                 = false;

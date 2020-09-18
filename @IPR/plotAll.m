@@ -25,5 +25,6 @@ function obj = plotAll(obj,~,~)
     obj.setPlotRange;
     obj.axesArray(3).Title.String = sprintf('reconstructed - %i steps', obj.nTotal);
     obj.axesArray(5).Title.String = sprintf('before constraints - %i steps', obj.nTotal);
+    obj.figureArray(1).Pointer = 'arrow';
     drawnow limitrate;
 end

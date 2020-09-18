@@ -18,8 +18,8 @@ function obj = scanParameter(obj, sVar, sArray, savePath)
     thisReconPlan = obj.reconPlan;
     for i=1:nPoints
         %% set parameter
-        obj=initIPR(obj,[],sVar,sArray(i));
-%         obj=resetIPR(obj,sVar,sArray(i));
+%         obj=initIPR(obj,[],sVar,sArray(i));
+        obj=resetIPR(obj,sVar,sArray(i));
 %         obj.(sVar) = sArray(i);
 %         fprintf('\t%s = %.3g\n', sVar, sArray(i))
         %% run reconstruction
@@ -33,6 +33,7 @@ function obj = scanParameter(obj, sVar, sArray, savePath)
         scanData(i).NRMSD = obj.errors(3,end-1);
         scanData(i).alpha = obj.alpha;
         scanData(i).delta = obj.delta;
+        scanData(i).deltaFactor = obj.deltaFactor;
         scanData(i).w = obj.w;
         scanData(i).WS = obj.WS;
         %% plot images in array

@@ -1,8 +1,8 @@
 classdef simulatePatternApp < handle
-    %SIMPATTERN Summary of this class goes here
+    %% SIMPATTERN Summary of this class goes here
     %   Detailed explanation goes here
     
-    % Properties that correspond to app components
+    %% Properties that correspond to app components
     properties (Access = public)
         figObj = gobjects(1,1)
         axesObjArray = gobjects(5,1)
@@ -37,7 +37,7 @@ classdef simulatePatternApp < handle
             simParameter.nDopants = ( (simParameter.aCore+simParameter.bCore) /2/0.222 )^3;
             % Geometry
             simParameter.nPixel = [1024,1024];
-            simParameter.center = 0.5*simParameter.nPixel + 1;
+            simParameter.center = 0.5*simParameter.nPixel + 0.5;
             % Graphics
             simParameter.cLims = [-1,2];
             simParameter.cMap = imorgen;
@@ -45,7 +45,7 @@ classdef simulatePatternApp < handle
             simParameter.YData = 6 * ( [-0.5*simParameter.nPixel(1)+1, 0.5*simParameter.nPixel(1)] );
             simParameter.XData = 6 * ( [-0.5*simParameter.nPixel(2)+1, 0.5*simParameter.nPixel(2)] );
             simParameter.ellipse = ellipse_outline(simParameter.aDrop, simParameter.bDrop, simParameter.rotationDrop);
-            simParameter.xyLim = 1.2*max(simParameter.aDrop, simParameter.bDrop)*[-1,1];
+            simParameter.xyLim = 1.2*max(simParameter.aDrop, simParameter.bDrop)*[-1,1] + [0,6];
             % Rest
             simParameter.isValidApp = false;
             simParameter.savepath = 'C:\Users\Toli\Google Drive\dissertation\2.helium\xfel-img\scattering_simulations';
@@ -54,6 +54,8 @@ classdef simulatePatternApp < handle
     
     methods (Access = private)
         function app = startSimulation(app,src,evt) %#ok<*INUSD>
+            fprintf('Starting scattering simulation ...\n')
+            drawnow;
             app = updateParameter(app);
             app.simData = dopecore_scatt(app.simData, app.simParameter);
             
@@ -89,11 +91,11 @@ classdef simulatePatternApp < handle
             app.simParameter.nDopants = ( (app.simParameter.aCore+app.simParameter.bCore) /2/0.222 )^3;
             % Geometry
             app.simParameter.nPixel = size(app.simData.dataCorrected);
-            app.simParameter.center = 0.5*app.simParameter.nPixel + 1;
+            app.simParameter.center = 0.5*app.simParameter.nPixel + 0.5;
             % Graphics
             app.simParameter.subtractionScale = 0.9;
-            app.simParameter.YData = 6 * ( [-0.5*app.simParameter.nPixel(1)+1, 0.5*app.simParameter.nPixel(1)] );
-            app.simParameter.XData = 6 * ( [-0.5*app.simParameter.nPixel(2)+1, 0.5*app.simParameter.nPixel(2)] );
+            app.simParameter.YData = 6 * ( [-0.5,0.5]*app.simParameter.nPixel(1) + [0,1] );
+            app.simParameter.XData = 6 * ( [-0.5,0.5]*app.simParameter.nPixel(2) + [0,1] );
             app.simParameter.ellipse = ellipse_outline(app.simParameter.aDrop, app.simParameter.bDrop, app.simParameter.rotationDrop);
             app.simParameter.xyLim = 1.2*max(app.simParameter.aDrop,app.simParameter.bDrop)*[-1,1];
             % Rest
@@ -138,6 +140,7 @@ classdef simulatePatternApp < handle
             app.axesObjArray(3).CLim = log10(app.simParameter.cLims);
             app.axesObjArray(4).CLim = log10(app.simParameter.cLims);
             app.axesObjArray(5).CLim = log10(app.simParameter.cLims);
+            fprintf('\tdone!\n')
         end
         function app = createSaveFig(app,evt)
 %             app.save.fig = figure('Units', 'inches',...
@@ -161,7 +164,7 @@ classdef simulatePatternApp < handle
         end
     end
     
-    % Callbacks that handle component events
+    %% Callbacks that handle component events
     methods (Access = private)
         % Code that executes after component creation
         function app = StartupFcn(app, newData, newMask, newParameter, newSavepath, mainapp)
@@ -208,10 +211,13 @@ classdef simulatePatternApp < handle
         end
     end
     
-    % Component initialization
+    %% Component initialization
     methods (Access = private)
-        % Create figObj and components
+        %% Create figObj and components
         function app = createComponents(app)
+            app.figObj = findobj(groot,'Tag','simFigure');
+            if isgraphics(app.figObj), return; end
+            
             fWidth = 1280;
             fHeight = 800;
             
@@ -219,6 +225,7 @@ classdef simulatePatternApp < handle
             app.figObj.Color = [1 1 1];
             app.figObj.Position = [200 200 fWidth fHeight];
             app.figObj.Name = 'Simulate Scattering';
+            app.figObj.Tag = 'simFigure';
             app.figObj.CloseRequestFcn = @app.thisCloseRequestFcn;
             app.figObj.KeyReleaseFcn = @app.thisKeyReleaseFcn;
             
@@ -286,7 +293,7 @@ classdef simulatePatternApp < handle
                 'Units', 'normalized', 'Position', [.13 .01 .7 .04], 'Callback', @app.startSimulation);
             
             app.cbxObjArray(1) = uicontrol(app.figObj, 'Style', 'checkbox', 'String', 'show mask',...
-                'Value', true,'Units', 'normalized', 'Position', [.55 .5 .04 .04], 'Callback', @app.startSimulation);
+                'Value', true,'Units', 'normalized', 'Position', [.55 .5 .08 .04], 'Callback', @app.startSimulation);
             
             app.textObjArray(1) = uicontrol(app.figObj, 'Style', 'text', 'String', 'a',...
                 'Units', 'normalized', 'Position', [.45 .9 .04 .03], 'Callback', @app.startSimulation);
@@ -316,10 +323,9 @@ classdef simulatePatternApp < handle
             app.figObj.Visible = 'on';
         end
     end
-    
-    % App creation and deletion
+    %% App creation and deletion
     methods (Access = public)
-        % Construct app
+        %% Construct app
         function app = simulatePatternApp(varargin)
             
             % Initialize default parameter
@@ -335,7 +341,7 @@ classdef simulatePatternApp < handle
                 clear app
             end
         end
-        % Code that executes before app deletion
+        %% Code that executes before app deletion
         function delete(app)
             
             % Delete figObj when app is deleted

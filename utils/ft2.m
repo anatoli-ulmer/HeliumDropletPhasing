@@ -6,13 +6,15 @@ function data=ft2(data)
     % Necessary because fftshift is extremly slow on gpuArrays
     
     N=size(data,1);
+    M=size(data,2);
     %works for uneven and even
     % index= mod((0:N-1)-double(rem(floor(N/2),N)), N)+1;
     %works only for even
-    index = mod((0:N-1)-N/2,N)+1;
-    data = data(index,index);
+    indexN = mod((0:N-1)-N/2,N)+1;
+    indexM = mod((0:M-1)-M/2,M)+1;
+    data = data(indexN,indexM);
     data = fft2(data);
-    data = data(index,index);
+    data = data(indexN,indexM);
     
 %     % the simple and slower version. 
 %     % USE THIS IF THE METHOD ABOVE DOES NOT WORK!

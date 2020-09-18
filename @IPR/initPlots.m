@@ -1,7 +1,12 @@
 function obj = initPlots(obj)
     %% figure
-    obj.figureArray(1) = figure(20000002); clf
-    obj.figureArray(1).Visible = 'off';
+    if isgraphics(findobj(groot,'Tag','recFigure'))
+        return
+    end
+    obj.figureArray(1) = figure('IntegerHandle',20000002,'Visible','off'); clf
+    
+    obj.figureArray(1).Tag = 'recFigure';
+    obj.figureArray(1).GraphicsSmoothing = 'off';
     obj.figureArray(1).Name = 'Iterative Phasing GUI';
     obj.figureArray(1).KeyPressFcn = obj.parentfig.KeyPressFcn;
     obj.figureArray(1).KeyReleaseFcn = obj.parentfig.KeyReleaseFcn;
@@ -88,20 +93,20 @@ function obj = initPlots(obj)
     obj.editArray(3).Position=[.92,.82,.025,.025];
     obj.editArray(3).Callback = @obj.setSubtractionScale;
     %% axes & plots
-    obj.axesArray(1) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.025 .025 .25 .425]);
-    obj.axesArray(2) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.025 .525 .25 .425]);
-    obj.axesArray(3) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.27 .525 .33 .425]);
-    obj.axesArray(4) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.27 .025 .33 .425]);
-    obj.axesArray(5) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.62 .525 .33 .425]);
-    obj.axesArray(6) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.62 .025 .33 .425]);
+%     obj.axesArray(1) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.025 .025 .25 .425]);
+%     obj.axesArray(2) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.025 .525 .25 .425]);
+%     obj.axesArray(3) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.27 .525 .33 .425]);
+%     obj.axesArray(4) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.27 .025 .33 .425]);
+%     obj.axesArray(5) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.62 .525 .33 .425]);
+%     obj.axesArray(6) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.62 .025 .33 .425]);
 
-    %         obj.tiledLayout = tiledlayout(obj.figureArray(1), 'flow');
-    %         obj.axesArray(1) = nexttile(obj.tiledLayout);
-    %         obj.axesArray(2) = nexttile(obj.tiledLayout);
-    %         obj.axesArray(3) = nexttile(obj.tiledLayout);
-    %         obj.axesArray(4) = nexttile(obj.tiledLayout);
-    %         obj.axesArray(5) = nexttile(obj.tiledLayout);
-    %         obj.axesArray(6) = nexttile(obj.tiledLayout);
+            obj.tiledLayout = tiledlayout(obj.figureArray(1), 2,3);
+            obj.axesArray(1) = nexttile(obj.tiledLayout,1);
+            obj.axesArray(2) = nexttile(obj.tiledLayout,4);
+            obj.axesArray(3) = nexttile(obj.tiledLayout,2);
+            obj.axesArray(4) = nexttile(obj.tiledLayout,5);
+            obj.axesArray(5) = nexttile(obj.tiledLayout,3);
+            obj.axesArray(6) = nexttile(obj.tiledLayout,6);
 
     obj.plt.err(1) = plot(obj.axesArray(1), obj.errors(1,:), '--'); grid(obj.axesArray(1), 'on'); hold(obj.axesArray(1), 'on');
     obj.plt.err(2) = plot(obj.axesArray(1), obj.errors(2,:), ':');
@@ -115,13 +120,18 @@ function obj = initPlots(obj)
     obj.plt.int(2).img = imagesc(obj.axesArray(4), (log10(abs(obj.W).^2)), 'XData', anglebound,'YData', anglebound);
     obj.plt.rec(1).img = imagesc(obj.axesArray(5), (real(obj.ws)), 'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
     obj.plt.rec(2).img = imagesc(obj.axesArray(6), (real(obj.w)), 'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
-
-    obj.axesArray(1).Units = 'normalized';
-    obj.axesArray(2).Units = 'normalized';
-    obj.axesArray(3).Units = 'normalized';
-    obj.axesArray(4).Units = 'normalized';
-    obj.axesArray(5).Units = 'normalized';
-    obj.axesArray(6).Units = 'normalized';
+    if ~isempty(obj.dropletOutline)
+        hold(obj.axesArray(5:6),'on');
+        obj.plt.rec(1).ell = plot(obj.axesArray(5),obj.dropletOutline.x,obj.dropletOutline.y,'k--');
+        obj.plt.rec(2).ell = plot(obj.axesArray(6),obj.dropletOutline.x,obj.dropletOutline.y,'k--');
+        hold(obj.axesArray(5:6),'off');
+    end
+%     obj.axesArray(1).Units = 'normalized';
+%     obj.axesArray(2).Units = 'normalized';
+%     obj.axesArray(3).Units = 'normalized';
+%     obj.axesArray(4).Units = 'normalized';
+%     obj.axesArray(5).Units = 'normalized';
+%     obj.axesArray(6).Units = 'normalized';
 
     obj.axesArray(1).Position = [.05 .55 .225 .4];
     obj.axesArray(2).Position = [.05 .05 .225 .4];
