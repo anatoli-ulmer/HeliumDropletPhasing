@@ -1,37 +1,44 @@
 %% INIT
+close all
 clear
 clc
-try
-    paths = mypaths;
-    addpath(paths.xfel.db);
-end
-addpath(genpath(fileparts(mfilename('fullpath'))));
+paths.main = fileparts(fullfile(mfilename('fullpath')));
 
-load('db_run_info')
-load('db_center')
-load('db_shape')
-load('db_sizing')
-% load('db_recon')
+%% define your storage path here if necessary:
+paths.storage = '.\storage\';
+
+try
+    tmpPaths = mypaths();
+    tmpPaths = tmpPaths.xfel;
+    pNames=fieldnames(tmpPaths);
+    for i=1:numel(pNames)
+        paths.(pNames{i}) = tmpPaths.(pNames{i});
+    end
+catch
+    warning('Function "mypaths()" not found. Using build in file paths.')
+    if ~isfield(paths,'storage')
+        paths.storage = 'storage\';
+    end
+    paths.analysis = fullfile(paths.storage, 'analysis');
+    paths.db = fullfile(paths.main, 'db');
+    paths.img = fullfile(paths.storage, 'img');
+    paths.recon = fullfile(paths.storage, 'recon');
+    paths.pnccd_dcg = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain');
+    paths.pnccd_dcgb = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain_bg');
+    paths.pnccd = paths.pnccd_dcg;
+end
+
+addpath(paths.main);
+
 %% for performance reasons:
-set(groot,'DefaultFigureGraphicsSmoothing','off')
+% set(groot,'DefaultFigureGraphicsSmoothing','off')
 
 %% first doped: 283
-% 450 68
-% 474 22
-% 301 1
-pnccdGUI(...
-    'run',301, ...
-    'hit', 1, ...z
-    'db_run_info', db_run_info, ...
-    'db_sizing', db_sizing, ...    
-    'db_center', db_center, ...
-    'db_shape', db_shape, ...
-    'pnccdpath', 'E:\XFEL2019_He\all_hits_corrected_dark_cm_gain',...
-    'imageSavePath','C:\Users\Toli\Google Drive\dissertation\2.helium\xfel-img')
 
-% D:\XFEL\He_2019\Data
-% E:\XFEL2019_He\all_hits_corrected_dark_cm_gain_bg
-% H:\XFEL2019_He\all_hits_corrected_dark_cm_gain_bg
+pnccdGUI(paths,...
+    'run',301, ...
+    'hit', 1);
+
 
 
 

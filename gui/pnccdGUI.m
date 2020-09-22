@@ -1,12 +1,8 @@
-function pnccdGUI(varargin)
+function pnccdGUI(paths, varargin)
 
-%% Source paths
 fprintf('\n\n\n\n\nStarting pnCCD GUI _/^\\_/^\\_\n\t\t\t... please be patient ...\n\n\n\n\n')
-pnccdGUIPaths = getXfelPaths;
-pnccdGUIPaths.pnccd = pnccdGUIPaths.pnccd_dcg;
-thisPath = fileparts(fullfile(mfilename('fullpath')));
-addpath(genpath(fullfile(thisPath,'\..')));
-
+%% Databases
+db = loadDatabases(paths);
 %% Figure creation & initifullfile(mfilename('fullpath'),'..')alization of grapical objects
 hFig.main = figure(1010101); 
 clf(hFig.main);
@@ -35,14 +31,8 @@ hPlt.centering = gobjects(1);
 run = 450;
 hit = 68;
 hData.trainId = nan;
-hData.filepath = pnccdGUIPaths.pnccd;
+hData.filepath = paths.pnccd;
 pnccd = [];
-
-db.runInfo = [];
-db.center = [];
-db.shape = [];
-% db.sizing = [];
-
 hData.shape = [];
 hData.filename = '';
 
@@ -96,7 +86,7 @@ hPrevData.filename = '';
 hPrevData.pnccd = [];
 hPrevData.hRecon = [];
 hSave = [];
-hSave.folder = pnccdGUIPaths.img;
+hSave.folder = paths.img;
 hRecon = [];
 hIPR = [];
 hSimu = [];
@@ -109,31 +99,11 @@ if exist('varargin','var')
         switch lower(varargin{ni})
             case 'run', run = varargin{ni+1};
             case 'hit', hit = varargin{ni+1};
-            case 'pnccdpath'
-                hData.filepath = varargin{ni+1};
-                pnccdGUIPaths.pnccd = hData.filepath;
             case 'clims', hData.par.cLims = varargin{ni+1};
             case 'nsteps', hData.var.nSteps = varargin{ni+1};
             case 'nloops', hData.var.nLoops = varargin{ni+1};
-            case 'db_run_info', db.runInfo = varargin{ni+1};
-            case 'db_sizing', db.sizing = varargin{ni+1};
-            case 'db_center', db.center = varargin{ni+1};
-            case 'db_shape', db.shape = varargin{ni+1};
-            case 'imagesavepath', hSave.folder = varargin{ni+1};
         end
     end
-end
-if isempty(db.runInfo)
-    db.runInfo = load(fullfile(thisPath,'/db/db_run_info.mat'));
-end
-if isempty(db.sizing)
-    db.sizing = load(fullfile(thisPath,'/db/db_sizing.mat'));
-end
-if isempty(db.center)
-    db.center = load(fullfile(thisPath,'/db/db_center.mat'));
-end
-if isempty(db.shape)
-    db.shape = load(fullfile(thisPath,'/db/db_shape.mat'));
 end
 
 %% Init
@@ -211,13 +181,11 @@ initFcn;
     end % thisWindowButtonDownFcn
     %% Initialization Functions
     function initFcn(~,~)
-        %%%%%%%%%%% databases %%%%%%%%%%%
-        db = loadDatabases(pnccdGUIPaths, db);
         if db.runInfo(run).isData
             %             hData.filename = sprintf('%04i_hits.mat', run);
             %             hData.matObj = matfile(fullfile(paths.pnccd, hData.filename));
-            %             load(fullfile(pnccdGUIPaths.pnccd, hData.filename), '-mat', 'pnccd');
-            [pnccd, hData.filename, hData.var.nHits] = pnccd_load_run(run, pnccdGUIPaths.pnccd);
+            %             load(fullfile(paths.pnccd, hData.filename), '-mat', 'pnccd');
+            [pnccd, hData.filename, hData.var.nHits] = pnccd_load_run(run, paths.pnccd);
         else
             error('Warning: run #%i is not a data run and was not loaded!', run);
         end
@@ -441,7 +409,7 @@ initFcn;
         % Check if run was background subtracted (folder name ends with "_bg").
         % Do Subtraction if not. TO DO: introduce another criterium or do
         % subtraction beforehand in all cases!
-        if ~strcmp(pnccdGUIPaths.pnccd(end-2:end-1),'bg')
+        if ~strcmp(paths.pnccd(end-2:end-1),'bg')
             hData.img.input = hData.img.input - pnccd.bg_corr;
         end
         % Custom masking
@@ -528,7 +496,7 @@ initFcn;
             warning(['Run #%03d is not a data run and was not loaded.\n',...
                 'Trying next: run #%03d\n'], nextRun, nextRun+direction);
             nextRun = nextRun + direction;
-            nextFile = fullfile(pnccdGUIPaths.pnccd, sprintf('%04i_hits.mat', nextRun));
+            nextFile = fullfile(paths.pnccd, sprintf('%04i_hits.mat', nextRun));
             if nextRun>489 || nextRun<200; return; end
         end
         fprintf('loading file %s\n', nextFile)
@@ -547,7 +515,7 @@ initFcn;
         
         % Check if requested run is stored in hPrevData, otherwise load it.
         if run ~= nextRun
-            [pnccd, hData.filename, hData.var.nHits] = pnccd_load_run(nextRun, pnccdGUIPaths.pnccd);
+            [pnccd, hData.filename, hData.var.nHits] = pnccd_load_run(nextRun, paths.pnccd);
             run = pnccd.run;
             %             hRecon = load_recon(nextrun, paths.recon);
         end
@@ -555,11 +523,11 @@ initFcn;
         loadImageData;
     end % loadNextFile
     function getFileFcn(src,evt)
-        [fn, fp] = uigetfile(fullfile(pnccdGUIPaths.pnccd, hData.filename));
+        [fn, fp] = uigetfile(fullfile(paths.pnccd, hData.filename));
         if isequal(fn,0)
             disp('User selected Cancel')
         else
-            pnccdGUIPaths.pnccd = fp;
+            paths.pnccd = fp;
             hAx.pnccd.Title.String = sprintf('loading run #%si ...', fn(1:4)); drawnow;
             nextrun = str2num_fast(fn(1:4));
             loadNextFile(src, evt, fp, nextrun);
@@ -602,7 +570,7 @@ initFcn;
         updateImgData();
         updatePlotsFcn();
         %% INCLUDE THIS AGAIN!
-%         save(fullfile(thisPath, 'db/db.mat'), 'db');
+%         save(fullfile(paths.db, 'db.mat'), 'db');
         fprintf('    -> centered\n')
     end % centerImgFcn
     function centerkeyfun(~, eventdata)
@@ -729,7 +697,7 @@ initFcn;
         hSimu = simulatePatternApp(hData.img.dataCropped, ...
             ~isnan(hData.img.dataCropped), ...
             hData.par, ...
-            fullfile(pnccdGUIPaths.img, 'scattering_simulations'), ...
+            fullfile(paths.img, 'scattering_simulations'), ...
             hFig.main);
         fprintf('\tSimulation started!\n')
     end % startSimulation
@@ -742,17 +710,17 @@ initFcn;
         dbSizing=db.sizing;
         dbShape=db.shape;
         dbRunInfo=db.runInfo;
-       save(fullfile(thisPath,'\..\db\db.mat'),'db','-v7.3')
-       save(fullfile(thisPath,'\..\db\db-center.mat'),'dbCenter','-v7.3')
-       save(fullfile(thisPath,'\..\db\db-run-info.mat'),'dbRunInfo','-v7.3')
-       save(fullfile(thisPath,'\..\db\db-shape.mat'),'dbShape','-v7.3')
-       save(fullfile(thisPath,'\..\db\db-sizing.mat'),'dbSizing','-v7.3')
+       save(fullfile(paths.db,'\db.mat'),'db','-v7.3')
+       save(fullfile(paths.db,' \db-center.mat'),'dbCenter','-v7.3')
+       save(fullfile(paths.db, '\db-run-info.mat'),'dbRunInfo','-v7.3')
+       save(fullfile(paths.db, '\db-shape.mat'),'dbShape','-v7.3')
+       save(fullfile(paths.db, '\db-sizing.mat'),'dbSizing','-v7.3')
     end
     function saveImgFcn(~,~)
         exportgraphics(gca,getSaveName,const.printRes)
     end
     function fullpath = getSaveName
-        hSave.folder=fullfile(pnccdGUIPaths.img,...
+        hSave.folder=fullfile(paths.img,...
             sprintf('%s',datetime('now','Format','yyyy-MM-dd')),...
             sprintf('r%03d-h%03d',run,hit));
         if ~exist(hData.folder,'dir'),mkdir(hData.folder); end
@@ -769,7 +737,7 @@ initFcn;
             %             try
             if strcmp(db.runInfo(run).doping.dopant,'none')
                 fprintf('run %i is not doped. Continuing...\n',run)
-                loadNextFile([],[],pnccdGUIPaths.pnccd, run+1,1);
+                loadNextFile([],[],paths.pnccd, run+1,1);
                 continue
             end
             if hData.var.nPhotonsOnDetector<5e4 ...
