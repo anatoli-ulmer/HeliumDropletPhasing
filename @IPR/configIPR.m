@@ -18,15 +18,15 @@ function obj = configIPR(obj)
     obj.doERstep                        = false;                % do ER step after each loop
 
     %% init parameter
-    obj.binFactor                       = single(1/2);      	% bin image before phasing (e.g. 1024px * 0.5 = 512px)
-    obj.binMethod                       = 'bilinear';       	% method for imresize (see documentation)
+    obj.binFactor                       = single(1);      	% bin image before phasing (e.g. 1024px * 0.5 = 512px)
+    obj.binMethod                       = 'bicubic';       	% method for imresize (see documentation)
     obj.masking.dilateFactor            = double(1);        	% IF dilateMask: dilate by px
     obj.support_dilateFactor            = double(1);
     obj.support_dilateMethod            = 'disk';
 
     %% masking parameter
-    obj.masking.minPhotons              = single(0.0);        	% low signal cutoff in photons 
-    obj.masking.maxPhotons              = single(Inf);      	% high signal cutoff in photons 
+    obj.masking.minPhotons              = single(0.5);        	% low signal cutoff in photons 
+    obj.masking.maxPhotons              = single(50);        	% high signal cutoff in photons 
     obj.masking.rmin                    = single(0);        	% radial mask min px cutoff
     obj.masking.rmax                    = single(512*3/4);      % IF constraint_RMask: radial mask max px cu toff
     obj.masking.RMASK_smoothPix         = single(20);       	% smoothing radial mask to avoid ringing

@@ -1,9 +1,7 @@
-function obj = initPlots(obj)
+function obj = initGUI(obj)
     %% figure
-    if isgraphics(findobj(groot,'Tag','recFigure'))
-        return
-    end
-    obj.figureArray(1) = figure('IntegerHandle',20000002,'Visible','off'); clf
+    obj.figureArray(1) = figure(20000002); clf
+    obj.figureArray(1).Visible = 'off';
     
     obj.figureArray(1).Tag = 'recFigure';
     obj.figureArray(1).GraphicsSmoothing = 'off';
@@ -51,7 +49,7 @@ function obj = initPlots(obj)
     obj.popupArray(5).Units='normalized';
     obj.popupArray(5).Position=[.57,.01,.05,.05];
     obj.popupArray(5).Value=obj.intpart;
-    obj.popupArray(5).Callback = @obj.setPlotParts;
+    obj.popupArray(5).Callback = @obj.setImageParts;
     
     obj.popupArray(6)=uicontrol('parent',obj.figureArray(1),'Style','popup');
     obj.popupArray(6).String={'real','imag','abs','angle'};
@@ -59,7 +57,7 @@ function obj = initPlots(obj)
         obj.reconpart));
     obj.popupArray(6).Units='normalized';
     obj.popupArray(6).Position=[.92,.01,.05,.05];
-    obj.popupArray(6).Callback = @obj.setPlotParts;
+    obj.popupArray(6).Callback = @obj.setImageParts;
     %% checkboxes
     obj.cBoxArray(1)=uicontrol('parent',obj.figureArray(1),'Style','checkbox');
     obj.cBoxArray(1).String='subtract ellipsoid';
@@ -93,59 +91,48 @@ function obj = initPlots(obj)
     obj.editArray(3).Position=[.92,.82,.025,.025];
     obj.editArray(3).Callback = @obj.setSubtractionScale;
     %% axes & plots
-%     obj.axesArray(1) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.025 .025 .25 .425]);
-%     obj.axesArray(2) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.025 .525 .25 .425]);
-%     obj.axesArray(3) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.27 .525 .33 .425]);
-%     obj.axesArray(4) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.27 .025 .33 .425]);
-%     obj.axesArray(5) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.62 .525 .33 .425]);
-%     obj.axesArray(6) = axes('parent', obj.figureArray(1));%, 'Units', 'normalized', 'Position', [.62 .025 .33 .425]);
+    obj.tiledLayout = tiledlayout(obj.figureArray(1), 2,3);
+    obj.axesArray(1) = nexttile(obj.tiledLayout,1);
+    obj.axesArray(2) = nexttile(obj.tiledLayout,4);
+    obj.axesArray(3) = nexttile(obj.tiledLayout,2);
+    obj.axesArray(4) = nexttile(obj.tiledLayout,5);
+    obj.axesArray(5) = nexttile(obj.tiledLayout,3);
+    obj.axesArray(6) = nexttile(obj.tiledLayout,6);
 
-            obj.tiledLayout = tiledlayout(obj.figureArray(1), 2,3);
-            obj.axesArray(1) = nexttile(obj.tiledLayout,1);
-            obj.axesArray(2) = nexttile(obj.tiledLayout,4);
-            obj.axesArray(3) = nexttile(obj.tiledLayout,2);
-            obj.axesArray(4) = nexttile(obj.tiledLayout,5);
-            obj.axesArray(5) = nexttile(obj.tiledLayout,3);
-            obj.axesArray(6) = nexttile(obj.tiledLayout,6);
-
-    obj.plt.err(1) = plot(obj.axesArray(1), obj.errors(1,:), '--'); grid(obj.axesArray(1), 'on'); hold(obj.axesArray(1), 'on');
+    obj.plt.err(1) = plot(obj.axesArray(1), obj.errors(1,:), '--'); 
+    grid(obj.axesArray(1), 'on'); hold(obj.axesArray(1), 'on');
     obj.plt.err(2) = plot(obj.axesArray(1), obj.errors(2,:), ':');
-    obj.plt.err(3) = plot(obj.axesArray(2), obj.errors(3,:), '-o'); grid(obj.axesArray(2), 'on'); hold(obj.axesArray(2), 'on');
+    obj.plt.err(3) = plot(obj.axesArray(2), obj.errors(3,:), '-o'); 
+    grid(obj.axesArray(2), 'on'); hold(obj.axesArray(2), 'on');
     obj.plt.err(4) = plot(obj.axesArray(2), obj.errors(4,:), ':');
     obj.plt.err(5) = plot(obj.axesArray(2), obj.errors(5,:), 'x');
     legend(obj.axesArray(2), 'NRMSD', 'sqrt(I)');
-
+    % create images
     anglebound = atan([obj.yy(1),obj.yy(end)]*75e-6/0.37/obj.binFactor)/2/pi*360;
-    obj.plt.int(1).img = imagesc(obj.axesArray(3), (log10(abs(obj.AMP).^2)), 'XData', anglebound,'YData', anglebound);
-    obj.plt.int(2).img = imagesc(obj.axesArray(4), (log10(abs(obj.W).^2)), 'XData', anglebound,'YData', anglebound);
-    obj.plt.rec(1).img = imagesc(obj.axesArray(5), (real(obj.ws)), 'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
-    obj.plt.rec(2).img = imagesc(obj.axesArray(6), (real(obj.w)), 'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
+    obj.plt.int(1).img = imagesc(obj.axesArray(3), (log10(abs(obj.AMP).^2)), ...
+        'XData', anglebound,'YData', anglebound);
+    obj.plt.int(2).img = imagesc(obj.axesArray(4), (log10(abs(obj.W).^2)), ...
+        'XData', anglebound,'YData', anglebound);
+    obj.plt.rec(1).img = imagesc(obj.axesArray(5), (real(obj.ws)),...
+        'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
+    obj.plt.rec(2).img = imagesc(obj.axesArray(6), (real(obj.w)), ...
+        'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
+    % plot ellipse
     if ~isempty(obj.dropletOutline)
         hold(obj.axesArray(5:6),'on');
-        obj.plt.rec(1).ell = plot(obj.axesArray(5),obj.dropletOutline.x,obj.dropletOutline.y,'k--');
-        obj.plt.rec(2).ell = plot(obj.axesArray(6),obj.dropletOutline.x,obj.dropletOutline.y,'k--');
+        obj.plt.rec(1).ell = plot(obj.axesArray(5),obj.dropletOutline.x,...
+            obj.dropletOutline.y,'k--');
+        obj.plt.rec(2).ell = plot(obj.axesArray(6),obj.dropletOutline.x,...
+            obj.dropletOutline.y,'k--');
         hold(obj.axesArray(5:6),'off');
     end
-%     obj.axesArray(1).Units = 'normalized';
-%     obj.axesArray(2).Units = 'normalized';
-%     obj.axesArray(3).Units = 'normalized';
-%     obj.axesArray(4).Units = 'normalized';
-%     obj.axesArray(5).Units = 'normalized';
-%     obj.axesArray(6).Units = 'normalized';
 
-    obj.axesArray(1).Position = [.05 .55 .225 .4];
-    obj.axesArray(2).Position = [.05 .05 .225 .4];
-    obj.axesArray(3).Position = [.27 .55 .33 .4];
-    obj.axesArray(4).Position = [.27 .05 .33 .4];
-    obj.axesArray(5).Position = [.62 .55 .33 .4];
-    obj.axesArray(6).Position = [.62 .05 .33 .4];
-
-    axis([obj.axesArray(1),  obj.axesArray(2)], 'tight')
+    axis(obj.axesArray(1:2), 'tight');
     axis(obj.axesArray(3:6), 'image');
 
     obj.axesArray(1).Title.String = 'real space error';
     obj.axesArray(2).Title.String = 'fourier space error';
-    obj.axesArray(3).Title.String = sprintf('reconstructed - %i steps', obj.nTotal);
+    obj.axesArray(3).Title.String = sprintf('current guess - %i steps', obj.nTotal);
     obj.axesArray(4).Title.String = 'measured';
     obj.axesArray(5).Title.String = 'before constraints';
     obj.axesArray(6).Title.String = 'after constraints';

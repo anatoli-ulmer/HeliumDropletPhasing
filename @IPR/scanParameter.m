@@ -25,7 +25,7 @@ function obj = scanParameter(obj, sVar, sArray, savePath)
         %% run reconstruction
 %         obj.iterate(nSteps, method);
         obj.reconPlan=thisReconPlan;
-        obj.startRecon();
+        obj.reconRunPlan();
         %% copy parameter and results
         scanData(i).errors = obj.errors; %#ok<*AGROW>
         scanData(i).realSpaceError = obj.errors(1,end-1);
@@ -75,7 +75,8 @@ function obj = scanParameter(obj, sVar, sArray, savePath)
         [scanData(:).NRMSD], 'o');
     gObj.ax.XLabel.String = sVar;
     gObj.ax.YLabel.String = 'error metrics';
-    gObj.leg = legend(gObj.ax, 'Real Space Error', 'Fourier Space Error', 'NRMSD', ...
+    gObj.leg = legend(gObj.ax, 'Real Space Error', 'Fourier Space Error', ...
+        'NRMSD', ...
         'Huang et al.');
     %% copy results into scanObj
     scanObj.scanVariable = sVar;

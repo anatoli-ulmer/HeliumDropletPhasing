@@ -1,13 +1,8 @@
 function xfelPaths = getXfelPaths()
-
-% paths.source = fileparts(mfilename('fullpath'));
-% addpath(genpath(paths.source));
-% global PATHS
 try
     paths = mypaths();
     xfelPaths = paths.xfel;
 catch
-%     fprintf('No global paths detected! Using standard paths. This might result in chaos...\n');
     warning('Function "mypaths()" not found. Using build in file paths.')
     xfelPaths.gDrive = 'C:\Users\Toli\Google Drive\';
     xfelPaths.storage = fullfile('E:\XFEL2019_He');

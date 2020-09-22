@@ -75,7 +75,7 @@ hData.var.radiusInPixel = nan;
 hData.var.radiusInNm = nan;
 hData.var.gapSize = nan;
 hData.var.shiftSize = nan;
-hData.var.center = hData.par.nPixelFull/2;
+hData.var.center = hData.par.nPixelFull/2+1;
 hData.var.center_sim = hData.var.center;
 hData.var.nPhotonsOnDetector = nan;
 
@@ -119,6 +119,7 @@ if exist('varargin','var')
             case 'db_sizing', db.sizing = varargin{ni+1};
             case 'db_center', db.center = varargin{ni+1};
             case 'db_shape', db.shape = varargin{ni+1};
+            case 'imagesavepath', hSave.folder = varargin{ni+1};
         end
     end
 end
@@ -163,24 +164,20 @@ initFcn;
                 clc; src.Pointer = 'arrow'; drawnow;
             case {'1','numpad1'},       centerImgFcn;
             case {'2','numpad2'},       findShapeFcn
-            case {'3','numpad3'}
-                if ~hFig.main.UserData.isRegisteredShift
-                    initIPR
-                else
-                    initIPRsim
-                end
+            case {'3','numpad3'},       initIPR
+            case {'e'},       initIPRsim
             case {'4','numpad4'}
-                hIPR.addReconPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
+                hIPR.reconAddToPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
             case {'5','numpad5'}
-                hIPR.addReconPlan('er',hData.var.nSteps,hData.var.nLoops);
+                hIPR.reconAddToPlan('er',hData.var.nSteps,hData.var.nLoops);
             case {'6','numpad6'}
-                hIPR.addReconPlan('hio',hData.var.nSteps,hData.var.nLoops);
+                hIPR.reconAddToPlan('mdcdi',hData.var.nSteps,hData.var.nLoops);
             case {'7','numpad7'}
-                hIPR.addReconPlan('nthio',hData.var.nSteps,hData.var.nLoops);
+                hIPR.reconAddToPlan('nthio',hData.var.nSteps,hData.var.nLoops);
             case {'8','numpad8'}
-                hIPR.addReconPlan('raar',hData.var.nSteps,hData.var.nLoops);
-            case {'9','numpad9'},       oneShotRecon
-            case {'return'},       hIPR.startRecon;
+                hIPR.reconAddToPlan('ntdcdi',hData.var.nSteps,hData.var.nLoops);
+            case {'9','numpad9'},       ;
+            case {'return'},       hIPR.reconRunPlan;
             case 'k', reconANDsave
             case 'f12'
                 hIPR.scanParameter('alpha', (0.5:0.05:1.5), hSave.folder);
@@ -658,8 +655,8 @@ initFcn;
         db.shape(run).shape(hit).data = hData.shape;
         db.shape(run).shape(hit).R = 6*(hData.shape.a/2 + hData.shape.b/2)/2;
         db.shape(run).shape(hit).ar = iif(hData.shape.a>hData.shape.b, hData.shape.a/hData.shape.b, hData.shape.b/hData.shape.a);
-        [hData.img.dropletdensity, hData.img.support] = ellipsoid_density(hData.shape.a/2, hData.shape.b/2, (hData.shape.a/2+hData.shape.b/2)/2, hData.shape.rot, [512.5,512.5], [1024,1024]);
-        hData.img.dropletOutline = ellipse_outline(hData.shape.a/2*6, hData.shape.b/2*6, -hData.shape.rot);
+        [hData.img.dropletdensity, hData.img.support] = ellipsoid_density(hData.shape.a/2, hData.shape.b/2, (hData.shape.a/2+hData.shape.b/2)/2, hData.shape.rot, [513,513], [1024,1024]);
+        hData.img.dropletOutline = ellipse_outline(hData.shape.a/2*6, hData.shape.b/2*6, hData.shape.rot);
         fprintf('ellipse parameters: \n[a, b, rot] = [%.2fpx, %.2fpx, %.2frad]\n', hData.shape.a/2,hData.shape.b/2,hData.shape.rot)
         fprintf('[a, b, rot] = [%.2fnm, %.2fnm, %.2fdegree]\n', hData.shape.a/2*6,hData.shape.b/2*6,hData.shape.rot/2/pi*360)
         %         hData.img.support = imopen(hData.img.support,strel('disk',2,0));
@@ -692,8 +689,8 @@ initFcn;
             'dropletOutline', hData.img.dropletOutline, ...    
             'rho0', hData.img.dropletdensity,...
             'parentfig', hFig.main);
-        hFig.main.Pointer = 'arrow'; drawnow limitrate;
-        hIPR.figureArray.Pointer = 'arrow'; drawnow limitrate;
+        hFig.main.Pointer = 'arrow';
+        hIPR.figureArray.Pointer = 'arrow'; drawnow;
         %         figure(hFig.main)
     end % initIPR
     function initIPRsim(~,~)
@@ -706,61 +703,31 @@ initFcn;
         if hData.par.nSimCores, simData=hSimu.simData.scatt1;
         else, simData=hSimu.simData.scatt2;
         end
-        simData=centerAndCropFcn(simData,[512.5,512.5]);
+        simData=centerAndCropFcn(simData,[513,513]);
         hIPR = IPR(simData, ...%             'objectHandle', hIPR, ...
             'support0', hSimu.simData.droplet>0, ...
             'support_radius', (hSimu.simParameter.aDrop+hSimu.simParameter.bDrop)/2/6, ...
-            'dropletOutline', hData.img.dropletOutline, ...
+            'dropletOutline', hSimu.simParameter.ellipse, ...
             'rho0', hSimu.simData.droplet,...
             'parentfig', hFig.main);
-        hIPR.plotAll;
-        hFig.main.Pointer = 'arrow'; drawnow limitrate;
+        hFig.main.Pointer = 'arrow';
+        hIPR.figureArray.Pointer = 'arrow'; drawnow;
     end % initIPRsim
     function addDCDI(~,~)
-        hIPR.addReconPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
+        hIPR.reconAddToPLan('dcdi',hData.var.nSteps,hData.var.nLoops);
     end % addDCDI
     function addHIO(~,~)
-        hIPR.addReconPlan('nthio',hData.var.nSteps,hData.var.nLoops);
+        hIPR.reconAddToPLan('nthio',hData.var.nSteps,hData.var.nLoops);
     end % addHIO
     function runRecon(~,~)
-        hIPR.startRecon();
+        hIPR.reconRunPlan();
     end % runRecon
-    function oneShotRecon(~,~)
-        DENSITY = fftshift(fft2(fftshift(hData.img.dropletdensity)));
-        if isempty(hIPR)
-            img_int = hData.img.data;
-            img_int(img_int<0)=0;
-            img_int(isnan(img_int)) = 0;
-            img_int = sqrt(img_int);
-            mmm = isnan(hData.img.data);
-            scaleFactor = nansum( img_int.*~mmm ) / nansum( abs( DENSITY.*~mmm ) );
-            ONEShot = (img_int.*~mmm) + ( abs(DENSITY.*mmm) ) * scaleFactor;
-            ONEShot = ONEShot.*exp(1i*angle(DENSITY));
-            oneShot = fftshift(ifft2(fftshift(ONEShot)));
-            oneShot = (oneShot-density*scaleFactor).*hData.img.support;
-        else
-            DENSITY = fftshift(fft2(fftshift(hIPR.hData.img.dropletdensity)));
-            img_int = abs(gather(hIPR.WS));
-            img_angle = angle(gather(hIPR.WS));
-            ONEShot = ( ( (1-hIPR.MASK).* abs(DENSITY) ) + ( hIPR.MASK .* abs(gather(hIPR.WS)) ) )...
-                .* angle(hIPR.WS);
-            oneShot = fftshift(ifft2(fftshift(ONEShot)));
-            oneShot = (oneShot-hIPR.density).*hIPR.hData.img.support;
-        end
-        
-        
-        figure(847847)
-        subplot(221); imagesc(log10(abs(ONEShot).^2), [-2,2])
-        subplot(222); imagesc(real(oneshot))
-        subplot(223); imagesc((angle(DENSITY)))
-        subplot(224); imagesc(log10(abs(ONEShot).^2), [-2,2]);
-    end % oneShotRecon
     %% Simulation Functions
     function startSimulation(~,~)
         fprintf('Starting simulation ...\n')
         hData.bool.simulationMode = true;
-        hSimu = simulatePatternApp(hData.img.dataCorrected, ...
-            ~isnan(hData.img.dataCorrected), ...
+        hSimu = simulatePatternApp(hData.img.dataCropped, ...
+            ~isnan(hData.img.dataCropped), ...
             hData.par, ...
             fullfile(pnccdGUIPaths.img, 'scattering_simulations'), ...
             hFig.main);
@@ -775,11 +742,11 @@ initFcn;
         dbSizing=db.sizing;
         dbShape=db.shape;
         dbRunInfo=db.runInfo;
-       save(fullfile(thisPath,'\..\db\db.mat'),'db','-v7.3','-nocompression')
-       save(fullfile(thisPath,'\..\db\db-center.mat'),'dbCenter','-v7.3','-nocompression')
-       save(fullfile(thisPath,'\..\db\db-run-info.mat'),'dbRunInfo','-v7.3','-nocompression')
-       save(fullfile(thisPath,'\..\db\db-shape.mat'),'dbShape','-v7.3','-nocompression')
-       save(fullfile(thisPath,'\..\db\db-sizing.mat'),'dbSizing','-v7.3','-nocompression')
+       save(fullfile(thisPath,'\..\db\db.mat'),'db','-v7.3')
+       save(fullfile(thisPath,'\..\db\db-center.mat'),'dbCenter','-v7.3')
+       save(fullfile(thisPath,'\..\db\db-run-info.mat'),'dbRunInfo','-v7.3')
+       save(fullfile(thisPath,'\..\db\db-shape.mat'),'dbShape','-v7.3')
+       save(fullfile(thisPath,'\..\db\db-sizing.mat'),'dbSizing','-v7.3')
     end
     function saveImgFcn(~,~)
         exportgraphics(gca,getSaveName,const.printRes)
@@ -787,10 +754,10 @@ initFcn;
     function fullpath = getSaveName
         hSave.folder=fullfile(pnccdGUIPaths.img,...
             sprintf('%s',datetime('now','Format','yyyy-MM-dd')),...
-            sprintf('r03d-h03d-%s.%s'));
+            sprintf('r%03d-h%03d',run,hit));
         if ~exist(hData.folder,'dir'),mkdir(hData.folder); end
         hSave.fileFormat='png';
-        hSave.fileName=sprintf('r03d-h03d-%s.%s',run,hit,...
+        hSave.fileName=sprintf('r%03d-h%03d-%s.%s',run,hit,...
         datetime('now','Format','yyyy-MM-dd_hhmmss-SSS'),hSave.fileFormat);
         hSave.fullpath=fullfile(hSave.folder,hSave.fileName);
         fullpath=hSave.fullpath;
@@ -819,257 +786,13 @@ initFcn;
             %             findShapeFcn;
             
             initIPR();
-            hIPR.addReconPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
-            hIPR.addReconPlan('nthio',hData.var.nSteps,hData.var.nLoops);
-            hIPR.startRecon();
+            hIPR.reconAddToPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
+            hIPR.reconAddToPlan('nthio',hData.var.nSteps,hData.var.nLoops);
+            hIPR.reconRunPlan();
             print(figure(20000002),fullfile('C:\Users\Toli\Google Drive\dissertation\2.helium\xfel-img\2020-09-07',...
                 sprintf('run%04d_hit%04d_dcdi.png',run,hit)),'-dpng')
             %         end
             loadNextHit([],[],1)
         end
     end % reconAndSave
-%% Methods - NOT IN USE
-%     function iterateIPR(method)
-%         for i=1:hData.var.nLoops
-%             if hFig.main.UserData.stopScript; hFig.main.UserData.stopScript = false; break; end
-%             hIPR.iterate(hData.var.nSteps,method);
-%             hIPR.plotAll;
-%         end
-% %         figure(hFig.main)
-%     end
-%     function finishRecon
-%         hIPR.fig.rec.Pointer = 'watch'; drawnow;
-%         hIPR.zeroBorders;
-%         hIPR.fig.rec.Pointer = 'arrow'; drawnow;
-%     end
-%     function reconANDsave(~,~)
-% %         %         try d = load(fullfile(paths.db, 'db_recon.mat')); db_recon = d.db_recon; clear d;
-% %         %         catch; fprintf('could not load db_recon\n'); end
-%         while true
-% %             try
-%                 if strcmp(db.runInfo(run).doping.dopant,'none')
-%                     fprintf('run %i is not doped. Continuing...\n',run)
-%                     loadNextFile([],[],pnccdGUIPaths.pnccd, run+1,1);
-%                     continue
-%                 end
-%                 if hData.var.nPhotonsOnDetector<5e4 ...
-%                         || isnan(db.sizing(run).R(hit)) ...
-%                         || db.sizing(run).R(hit)*1e9<30
-%                     loadNextHit([],[],1);
-%                     continue
-%                 end
-%                 if run>=437 && hData.var.nPhotonsOnDetector<1e5
-%                     loadNextHit([],[],1);
-%                     continue
-%                 end
-%                 %             centerImgFcn;
-%                 %             findShapeFcn;
-%
-%                 initIPR();
-%                 hIPR.addReconPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
-%                 hIPR.addReconPlan('nthio',hData.var.nSteps,hData.var.nLoops);
-%                 hIPR.startRecon();
-%                 print(figure(20000002),fullfile('C:\Users\Toli\Google Drive\dissertation\2.helium\xfel-img\2020-09-07',...
-%                     sprintf('run%04d_hit%04d_dcdi.png',run,hit)),'-dpng')
-% %             end
-%             loadNextHit([],[],1)
-%         end
-%     end
-
-%             %                 startDCDI
-%             %                 startHIO
-%             startHPR
-%             %                 finishReconstruction
-%
-%             %%%% FIGURES %%%%
-%             hSaveObj.fig = figure(601); hSaveObj.fig.Name = 'save figure #1'; clf(hSaveObj.fig);
-%             hSaveObj.fig.PaperSize = [29.6774   20.9840].*[4/3,1];
-%             hSaveObj.fig.PaperPosition = [0 0 hSaveObj.fig.PaperSize];
-%             hSaveObj.uit = uitable(hSaveObj.fig, 'Units', 'normalized', 'Position', [0,.5,.25,.5], ...
-%                 'FontSize', 10, 'ColumnWidth', {100,230}, 'RowName', [], ...
-%                 'ColumnName', []);
-%             hSaveObj.fig2 = figure(602); hSaveObj.fig2.Name = 'save figure #2'; clf(hSaveObj.fig2);
-%             hSaveObj.fig2.PaperSize = [29.6774   20.9840];
-%             hSaveObj.fig2.PaperPosition = [0,0,hSaveObj.fig2.PaperSize];
-%             hSaveObj.ax2 = axes('parent', hSaveObj.fig2);
-%
-%             hIPR.ws = hIPR.ws .* hIPR.support;
-%             hIPR.oneshot = hIPR.oneshot .* hIPR.support;
-%             %                 hIPR.density = hIPR.density .* mode( real(hIPR.w(hIPR.support>0))./hIPR.density(hIPR.support>0) );
-%
-%             % scattering image
-%             hSaveObj.ax(1) = mysubplot(2,4,2, 'parent', hSaveObj.fig);
-%             hSaveObj.img(1) = imagesc(hIPR.plt.int(2).img.CData, ...
-%                 'XData', hIPR.plt.int(2).img.XData, ...
-%                 'YData', hIPR.plt.int(2).img.YData, ...
-%                 'parent', hSaveObj.ax(1), [-2 ,3]);
-%             colormap(hSaveObj.ax(1), imorgen);
-%             hSaveObj.ax(1).YLabel.String = 'scattering angle';
-%             hSaveObj.ax(1).Title.String = 'measured intensity';
-%
-%             % reconstructed intensity
-%             hSaveObj.ax(2) = mysubplot(2,4,6, 'parent', hSaveObj.fig);
-%             hSaveObj.img(2) = imagesc(hIPR.plt.int(1).img.CData, ...
-%                 'XData', hIPR.plt.int(1).img.XData, ...
-%                 'YData', hIPR.plt.int(1).img.YData, ...
-%                 'parent', hSaveObj.ax(2), [-2,3]);
-%             colormap(hSaveObj.ax(2), imorgen);
-%             hSaveObj.ax(2).YLabel.String = 'scattering angle';
-%             hSaveObj.ax(2).Title.String = 'reconstructed intensity';
-%
-%             % real part of reconstruction
-%             hSaveObj.ax(3) = mysubplot(2,4,3, 'parent', hSaveObj.fig);
-%             hSaveObj.img(3) = imagesc(real(hIPR.ws)-hIPR.density*hIPR.subscale, ...
-%                 'XData', hIPR.plt.rec(2).img.XData, ...
-%                 'YData', hIPR.plt.rec(2).img.YData, ...
-%                 'parent', hSaveObj.ax(3));
-%             colormap(hSaveObj.ax(3), b2r);
-%             set(hSaveObj.ax(3), 'XLim', hIPR.ax.rec(2).XLim, 'YLim', hIPR.ax.rec(2).YLim,...
-%                 'CLim', [-1,1]*max(abs(hSaveObj.img(3).CData(:))));
-%             hSaveObj.ax(3).YLabel.String = 'nanometer';
-%             hSaveObj.ax(3).Title.String = 'real part (shape substracted)';
-%
-%             % imag part of reconstruction
-%             hSaveObj.ax(4) = mysubplot(2,4,7, 'parent', hSaveObj.fig);
-%             hSaveObj.img(4) = imagesc(imag(hIPR.w), ...
-%                 'XData', hIPR.plt.rec(2).img.XData, ...
-%                 'YData', hIPR.plt.rec(2).img.YData, ...
-%                 'parent', hSaveObj.ax(4));
-%             colormap(hSaveObj.ax(4), igray);
-%             set(hSaveObj.ax(4), 'XLim', hIPR.ax.rec(2).XLim, 'YLim', hIPR.ax.rec(2).YLim,...
-%                 'CLim', [-1,1]*max(abs(hSaveObj.img(4).CData(:))));
-%             hSaveObj.ax(4).YLabel.String = 'nanometer';
-%             hSaveObj.ax(4).Title.String = 'imaginary part';
-%
-%             % real oneshot part of reconstruction
-%             hSaveObj.ax(5) = mysubplot(2,4,4, 'parent', hSaveObj.fig);
-%             %                 hSaveobj.img(5) = imagesc(imag(hIPR.ws), ...
-%             hSaveObj.img(5) = imagesc(real(hIPR.oneshot) - hIPR.density*hIPR.subscale, ...
-%                 'XData', hIPR.plt.rec(2).img.XData, ...
-%                 'YData', hIPR.plt.rec(2).img.YData, ...
-%                 'parent', hSaveObj.ax(5));
-%             colormap(hSaveObj.ax(5), b2r);
-%             set(hSaveObj.ax(5), 'XLim', hIPR.ax.rec(2).XLim, 'YLim', hIPR.ax.rec(2).YLim,...
-%                 'CLim', [-1,1]*max(abs(hSaveObj.img(5).CData(:))));
-%             hSaveObj.ax(5).YLabel.String = 'nanometer';
-%             %                 hSaveobj.ax(5).Title.String = 'reconstructed imag part';
-%             hSaveObj.ax(5).Title.String = 'oneshot - real part';
-%
-%
-%             % imaginary oneshot of reconstruction
-%             hSaveObj.ax(6) = mysubplot(2,4,8, 'parent', hSaveObj.fig);
-%             %                 hSaveobj.img(6) = imagesc(angle(hIPR.ws), ...
-%             hSaveObj.img(6) = imagesc(imag(hIPR.oneshot), ...
-%                 'XData', hIPR.plt.rec(2).img.XData, ...
-%                 'YData', hIPR.plt.rec(2).img.YData, ...
-%                 'parent', hSaveObj.ax(6));
-%             colormap(hSaveObj.ax(6), igray);
-%             set(hSaveObj.ax(6), 'XLim', hIPR.ax.rec(2).XLim, 'YLim', hIPR.ax.rec(2).YLim,...
-%                 'CLim', [-1,1]*max(abs(hSaveObj.img(6).CData(:))));
-%             hSaveObj.ax(6).YLabel.String = 'nanometer';
-%             %                 hSaveobj.ax(6).Title.String = 'reconstructed phase';
-%             hSaveObj.ax(6).Title.String = 'oneshot - imaginary part';
-%
-%             % shape reconstruction
-%             hSaveObj.ax(7) = mysubplot(2,4,5, 'parent', hSaveObj.fig);
-%             hSaveObj.img(7) = imagesc(hAx.shape.Children(5).CData, ...
-%                 'parent', hSaveObj.ax(7));
-%             arrayfun(@(a) copyobj(hAx.shape.Children(a),hSaveObj.ax(7)), 1:4)
-%             colormap(hSaveObj.ax(7), r2b);
-%             set(hSaveObj.ax(7), 'XLim', [512-db.sizing(run).R(hit)*1e9/6*3, ...
-%                 512+db.sizing(run).R(hit)*1e9/6*3],...
-%                 'YLim', [512-db.sizing(run).R(hit)*1e9/6*3, ...
-%                 512+db.sizing(run).R(hit)*1e9/6*3]);
-%             hSaveObj.ax(7).YLabel.String = 'pixel';
-%             hSaveObj.ax(7).Title.String = 'reconstructed shape';
-%
-%             % data table
-%             hSaveObj.uit.Data = {'run #', run;...
-%                 'train id', hData.trainId;...
-%                 'hit', hit;...
-%                 'T [K]', db.runInfo(run).source.T;...
-%                 'p [bar]', db.runInfo(run).source.p;...
-%                 'delay [ms]', db.runInfo(run).source.delayTime;...
-%                 'R [nm]', db.sizing(run).R(hit)*1e9;...
-%                 'a [nm]', hData.shape.a/2*6;...
-%                 'b [nm]', hData.shape.b/2*6;...
-%                 'rot [°]', mod(shape.rot,2*pi)/pi*180;...
-%                 'center_x [px]', hData.var.center(2);...
-%                 'center_y [px]', hData.var.center(1);...
-%                 'photons #', round(hData.var.nPhotonsOnDetector);...
-%                 'lit pixel #', hData.var.nLitPixel;...
-%                 'dopant', db.runInfo(run).doping.dopant{:};...
-%                 'depletion [%]', db.runInfo(run).doping.depletion;...
-%                 'AR', db.shape(run).shape(hit).ar;...
-%                 };
-%             %                 hSaveobj.uit.Data = {'run #', sprintf('%03d',run);...
-%             %                     'train id', sprintf('%d',pnccd.trainid(hit));...
-%             %                     'hit', sprintf('%d',hit);...
-%             %                     'T', sprintf('%.1f K', db.runInfo(run).source.T);...
-%             %                     'p', sprintf('%.1f bar', db.runInfo(run).source.p);...
-%             %                     'delay', sprintf('%.1f ms', db.runInfo(run).source.delayTime);...
-%             %                     'R', sprintf('%.1f nm',db.sizing(run).R(hit)*1e9);...
-%             %                     'a', sprintf('%.1f nm',shape.a/2*6);...
-%             %                     'b', sprintf('%.1f nm',shape.b/2*6);...
-%             %                     'rotation angle', sprintf('%.1f °',mod(shape.rot/pi*180,2*pi));...
-%             %                     'center', sprintf('[%.1f, %.1f] px', center(1), center(2));...
-%             %                     'photons #', sprintf('%.0f', hData.var.nPhotonsOnDetector);...
-%             %                     'lit pixel #', sprintf('%.0f', hData.var.nLitPixel);...
-%             %                     'dopant', sprintf('%s', db.runInfo(run).doping.dopant{:});...
-%             %                     'depletion', sprintf('%d %%', db.runInfo(run).doping.depletion);...
-%             %                     };
-%
-%             % saving
-%             subpath = sprintf('%s%\\02.0fK_%02.0fbar', db.runInfo(run).doping.dopant{:},...
-%                 round(db.runInfo(run).source.T),...
-%                 round(db.runInfo(run).source.p));
-%             savepath = fullfile(pnccdGUIPaths.img, 'reconstructions\png\',subpath);
-%             if ~exist(savepath, 'dir'); mkdir(savepath); end
-%             sname = sprintf('r%04d_id%d_hit%04d.png', run, hData.trainId, hit);
-%             saveas(hSaveObj.fig, fullfile(savepath,sname));
-%
-%             hSaveObj.img2 = imagesc(hIPR.support.*abs(hIPR.oneshot-hIPR.density*~strcmp(db.runInfo(run).doping.dopant,'none')),...
-%                 'XData', hIPR.plt.rec(2).img.XData, ...
-%                 'YData', hIPR.plt.rec(2).img.YData, ...
-%                 'parent', hSaveObj.ax2);
-%             limrange = ceil(hIPR.ax.rec(2).XLim(2)/100)*100;
-%             set(hSaveObj.ax2, 'XLim', limrange*[-1,1], 'YLim', limrange*[-1,1]);
-%             colorbar(hSaveObj.ax2); colormap(hSaveObj.ax2, igray); drawnow;
-%             savepath = fullfile('E:\XFEL2019_He\reconstructions\png_recon_igray\',subpath);
-%             if ~exist(savepath, 'dir'); mkdir(savepath); end
-%             sname = sprintf('r%04d_id%d_hit%04d_modulus.png', run, hData.trainId, hit);
-%             saveas(hSaveObj.fig2, fullfile(savepath, sname))
-%
-%             colormap(hSaveObj.ax2, wjet); drawnow;
-%             savepath = fullfile('E:\XFEL2019_He\reconstructions\png_recon_wjet\',subpath);
-%             if ~exist(savepath, 'dir'); mkdir(savepath); end
-%             sname = sprintf('r%04d_id%d_hit%04d_modulus.png', run, hData.trainId, hit);
-%             saveas(hSaveObj.fig2, fullfile(savepath, sname))
-%
-%             hRecon(hit).recon = (hIPR.ws); %#ok<*AGROW>
-%             hRecon(hit).W = (hIPR.W);
-%             hRecon(hit).scatt = ( exp(1i*hIPR.PHASE) .* ( ( hIPR.INT .* (1-hIPR.MASK) ) + ( hIPR.SCATT.* hIPR.MASK ) ) );
-%             hRecon(hit).droplet_shape = (hIPR.density);
-%             hRecon(hit).oneshot = (hIPR.oneshot);
-%             hRecon(hit).errorR = (hIPR.errReal);
-%             hRecon(hit).errorF = (hIPR.errFourier);
-%             hRecon(hit).parameter.run = run;
-%             hRecon(hit).parameter.hit = hit;
-%             hRecon(hit).parameter.T = db.runInfo(run).source.T;
-%             hRecon(hit).parameter.p = db.runInfo(run).source.p;
-%             hRecon(hit).parameter.delay =  db.runInfo(run).source.delayTime;
-%             hRecon(hit).parameter.R_guinier = db.sizing(run).R(hit)*1e9;
-%             hRecon(hit).parameter.a = hData.shape.a/2*6;
-%             hRecon(hit).parameter.b = hData.shape.b/2*6;
-%             hRecon(hit).parameter.rot = mod(shape.rot,2*pi);
-%             hRecon(hit).parameter.center = hData.var.center;
-%             hRecon(hit).parameter.photonsOnDetector = int32(hData.var.nPhotonsOnDetector);
-%             hRecon(hit).parameter.litPixel = int32(hData.var.nLitPixel);
-%             hRecon(hit).parameter.dopant = db.runInfo(run).doping.dopant{:};
-%             hRecon(hit).parameter.depletion = db.runInfo(run).doping.depletion;
-%             hRecon(hit).parameter.ar = db.shape(run).shape(hit).ar;
-%             hRecon(hit).parameter.uit = hSaveObj.uit.Data;
-%             loadNextHit(src,evt,1);
-%         end
-%     end
 end % pnccdGUI

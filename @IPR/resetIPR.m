@@ -23,5 +23,5 @@ function obj = resetIPR(obj,varargin)
     obj.reconPlan = {};
     
     obj.initPhase();
-    obj.plotAll();
+    obj.updateGUI();
 end

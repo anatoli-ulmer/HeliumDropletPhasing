@@ -11,7 +11,7 @@ function obj = initIPR(obj, pnCCDimg)
 %     obj.initGPU()
     obj.initMask();
     
-    obj.initPlots();
+    obj.initGUI();
     obj.resetIPR();
 
     fprintf('\t... done.\n')

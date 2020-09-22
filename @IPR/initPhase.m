@@ -31,7 +31,7 @@ function obj = initPhase(obj)
     fprintf('\tbin factor = %.3g\n', obj.binFactor)
     fprintf('\talpha = %.3g\n', obj.alpha)
     fprintf('\tnoise = %.3g\n', obj.noise)
-    fprintf('\tdelta = %.3g\n', obj.delta)
+    fprintf('\tdelta = %.2g * noise\n', obj.deltaFactor)
     
     obj.oneshot = obj.w;
     obj.ONESHOT = obj.WS;

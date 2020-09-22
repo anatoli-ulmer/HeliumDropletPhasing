@@ -1,4 +1,4 @@
-function obj = startRecon(obj, method, nSteps, nLoops)
+function obj = reconRunPlan(obj, method, nSteps, nLoops)
     if nargin>1
         obj.reconPlan = {method,nSteps,nLoops};
     end
@@ -12,8 +12,9 @@ function obj = startRecon(obj, method, nSteps, nLoops)
     for i=1:planEntries
         [method,nSteps,nLoops]=obj.reconPlan{i,:};
         for j=1:nLoops
-            obj.iterate(nSteps,method);
-            obj.plotAll;
+            obj.reconIterate(nSteps,method);
+            obj.updateGUI;
         end
     end
+    obj.reconPlan = {};
 end

@@ -10,7 +10,7 @@ function output = sphereProjection(radius, shift, N)
         N = [N,N];
     end
     
-    [X,Y]=meshgrid(-N(1)/2:N(1)/2-1,-N(2)/2:N(2)/2-1);
-    output=2*sqrt((radius^2-(X-shift(1)).^2-(Y-shift(2)).^2));
-    output=output.*((X-shift(1)).^2+(Y-shift(2)).^2<radius^2);
+    [X,Y]=meshgrid(-N(2)/2:N(2)/2-1,-N(1)/2:N(1)/2-1);
+    output=2*sqrt((radius^2-(X-shift(2)).^2-(Y-shift(1)).^2));
+    output=output.*((X-shift(2)).^2+(Y-shift(1)).^2<radius^2);
 end

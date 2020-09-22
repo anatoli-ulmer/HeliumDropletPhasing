@@ -1,4 +1,4 @@
-function obj = applyConstraints(obj, method)
+function obj = reconApplyConstraints(obj, method)
 
     if obj.constraint_real
         obj.ws = real(obj.ws); 
@@ -9,14 +9,14 @@ function obj = applyConstraints(obj, method)
     if obj.constraint_shape
         obj.support = obj.support .* ( real(obj.ws) > obj.rho + obj.delta ); 
     end
-
-%     obj.rho = normalizeDensity(obj.ws, obj.support, obj.rho, obj.alpha);
+%     renormalize normalize on droplet density
+%     rho = obj.alpha * obj.rho / norm(obj.rho, 'fro') * norm(abs(obj.ws).*support, 'fro');
 
     switch lower(method)
         case 'dcdi' % 4
             obj.w = obj.ws .* ( ( real(obj.ws) > (obj.rho + obj.delta) ) .* ( angle(obj.ws-obj.rho) >= obj.phaseMin ) )...
                 + obj.rho .* ~( ( real(obj.ws) > (obj.rho + obj.delta) ) .* ( angle(obj.ws-obj.rho) >= obj.phaseMin ) );
-            obj.w = obj.w.*obj.support0;
+            obj.w = obj.w.*obj.support;
         case 'er' % 5
             obj.w = obj.ws .* obj.support;
         case 'hpr' % 
@@ -24,6 +24,21 @@ function obj = applyConstraints(obj, method)
                 + (  (obj.w - obj.beta*obj.ws) .* ~( obj.support & ( obj.w <= obj.ws.*(1+obj.beta) ) )  );
         case 'hio' % 6
             obj.w = ~obj.support.*(obj.w - obj.beta*obj.ws) + obj.support.* obj.ws;
+        case 'mdcdi'
+            obj.w = (obj.ws + obj.rho)/2;
+            obj.w = obj.w.*obj.support;
+        case 'ntdcdi'
+%             obj.w = (obj.w - obj.beta*obj.ws).*(~obj.support);
+%             obj.w = obj.w .* (abs(obj.ws)>obj.delta);
+%             obj.w = obj.w + obj.ws .* obj.support;
+            
+            wI = obj.ws .* ( ( real(obj.ws) > (obj.rho + obj.delta) ) .* ( angle(obj.ws-obj.rho) >= obj.phaseMin ) )...
+                + obj.rho .* ~( ( real(obj.ws) > (obj.rho + obj.delta) ) .* ( angle(obj.ws-obj.rho) >= obj.phaseMin ) );
+            wI = wI.*obj.support;
+            wO = (obj.w - obj.beta*obj.ws).*(~obj.support);
+            wO = wO .* (abs(obj.ws)>obj.delta);
+            obj.w = wO + wI;
+            
         case 'nthio' % 7
             obj.w = (obj.w - obj.beta*obj.ws).*(~obj.support);
             obj.w = obj.w .* (abs(obj.ws)>obj.delta);

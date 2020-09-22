@@ -108,40 +108,31 @@ classdef IPR < handle
         
         %% DECLARATION
         obj = configIPR(obj)                                                    % load standard values from config file
-        obj = initIPR(obj, pnCCDimg)                                            % initialization function
-        obj = initGPU(obj)                                                      % initialization funciton for GPU arrays
+        obj = initIPR(obj, pnCCDimg)                                            % initialization function                                                    % initialization funciton for GPU arrays
         obj = initMask(obj)                                                     % initialize masks
-        obj = initPlots(obj)                                                    % generate figure and plot objects
+        obj = initGUI(obj)                                                    % generate figure and plot objects
         obj = resizeData(obj)                                                   % rebin and resize data
         obj = resetIPR(obj,varargin)                                            % reset variables to starting values
         [noise, noiseMatrix, NOISEMatrix] = calcNoise(AMP0)                     % calculate noise amplitude
         
-        obj = addReconPlan(obj, method, nSteps, nLoops)
-        obj = startRecon(obj, method, nSteps, nLoops)
-        obj = iterate(obj, nSteps, method)
-        obj = applyConstraints(obj, method)                                             
+        obj = reconAddToPLan(obj, method, nSteps, nLoops)
+        obj = reconRunPlan(obj, method, nSteps, nLoops)
+        obj = reconIterate(obj, nSteps, method)
+        obj = reconApplyConstraints(obj, method)                                             
         errors = calcErrors(ws,rho,support,W,AMP0,MASK)
-        rho = normalizeDensity(ws, support, rho0, alpha)
         WS = projectorModulus(AMP, AMP0, PHASE, MASK)
-        obj = scanParameter(obj, sVar, sArray, savePath)        % scan parameter and save images
         
-        alpha = updateAlpha(alphaArray, idx)
         beta = updateBeta(beta0, beta, nTotal)
         support = updateSupport(w)
         
         data = getReconstructionPart(data, part)                                % Get part of Real space reconstruction, chosen by dropdown menu.
-        obj = zeroBorders(obj)                                                  % Set outer region in Fourier space to zero
         
-        obj = plotAll(obj,~,~)
         obj = setColormaps(obj,~,~)                                             % Setter for colormaps
         obj = setScaleErrorPlot(obj,src,~)                                      % Setter for colorbar limits of Real space plots, chosen by dropdown menu.
-        obj = setPlotParts(obj,~,~)                                             % Setter for real/imag/abs/angle part of Real space plots, chosen by dropdown menu.
+        obj = setImageParts(obj,~,~)                                             % Setter for real/imag/abs/angle part of Real space plots, chosen by dropdown menu.
         obj = setSubtractionScale(obj,~,~)
         obj = setPlotRange(obj,~,~)
+        
+        obj = updateGUI(obj,~,~)
     end
 end
-
-
-
-
-
