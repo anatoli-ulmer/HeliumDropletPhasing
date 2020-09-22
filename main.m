@@ -1,8 +1,10 @@
 %% INIT
 clear
 clc
-paths = mypaths;
-addpath(paths.xfel.db);
+try
+    paths = mypaths;
+    addpath(paths.xfel.db);
+end
 addpath(genpath(fileparts(mfilename('fullpath'))));
 
 load('db_run_info')
