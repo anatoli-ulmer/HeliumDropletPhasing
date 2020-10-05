@@ -4,6 +4,7 @@ clear
 clc
 
 paths.main = fileparts(fullfile(mfilename('fullpath')));
+addpath(genpath(paths.main));
 pathFile = fullfile(paths.main,'paths.mat');
 if exist(pathFile,'file')
     load(pathFile)

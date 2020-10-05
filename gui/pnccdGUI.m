@@ -4,7 +4,10 @@ fprintf('\n\n\n\n\nStarting pnCCD GUI _/^\\_/^\\_\n\t\t\t... please be patient .
 %% Databases
 db = loadDatabases(paths);
 %% Figure creation & initifullfile(mfilename('fullpath'),'..')alization of grapical objects
-hFig.main = figure(1010101); 
+hFig.main = findobj('Type','Figure','Name','pnccdGUI');
+if isempty(hFig.main)
+    hFig.main = figure;
+end
 clf(hFig.main);
 % for performance reasons:
 hFig.main.GraphicsSmoothing=false;
@@ -127,7 +130,7 @@ initFcn;
             case 's'
                 if hFig.main.UserData.isRegisteredShift, startSimulation;
                 elseif hFig.main.UserData.isRegisteredControl, saveImgFcn;
-                else saveDBFcn;
+                else, saveDBFcn;
                 end
             case 'l',                   getFileFcn;
             case 'c'
@@ -146,7 +149,7 @@ initFcn;
                 hIPR.reconAddToPlan('nthio',hData.var.nSteps,hData.var.nLoops);
             case {'8','numpad8'}
                 hIPR.reconAddToPlan('ntdcdi',hData.var.nSteps,hData.var.nLoops);
-            case {'9','numpad9'},       ;
+            case {'9','numpad9'}       
             case {'return'},       hIPR.reconRunPlan;
             case 'k', reconANDsave
             case 'f12'
