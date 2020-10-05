@@ -541,7 +541,10 @@ initFcn;
     function centerImgFcn(~,~)
         hFig.main.Pointer = 'watch'; drawnow;
         if ~isgraphics(hFig.centering)
-            hFig.centering=figure('IntegerHandle',1010102,'Tag','centerFigure');
+            hFig.centering=findobj('Type','Figure','Tag','centerFigure');
+            if isempty(hFig.centering)
+                hFig.centering=figure('Tag','centerFigure');
+            end
             figure(hFig.main);
             hFig.centering.KeyPressFcn = @centerkeyfun;
             hFig.centering.Name = 'centering';
@@ -616,11 +619,14 @@ initFcn;
             hFig.shape1.Name = 'shape figure #1';
         end
         if ~isgraphics(hFig.shape2)
-            hFig.shape2 = figure(1010104); 
-            hFig.shape2.Name = 'shape figure #2';
+            hFig.shape2 = findobj('Type','Figure','Name','shape figure #2');
+            if isempty(hFig.shape2)
+                hFig.shape2 = figure;
+                hFig.shape2.Name = 'shape figure #2';
+            end
         end
         if ~isgraphics(hAx.shape)
-            hAx.shape=mysubplot(1,2,2,'parent',hFig.shape2); 
+            hAx.shape=subplot(1,2,2,'parent',hFig.shape2); 
         end
         [hData.shape, hAx.shape] = findShapeFit(hData.img.dataCropped, hData.var.radiusInPixel, 'fig1', hFig.shape1, 'fig2', hFig.shape2, 'ax', hAx.shape);
         db.shape(run).shape(hit).data = hData.shape;
@@ -636,8 +642,8 @@ initFcn;
         %         hData.img.support = imerode(hData.img.support,strel('disk',1,0));
         %         hData.img.support = imopen(hData.img.support,strel('disk',4,0));
         figure(4949494); clf
-%         hAxSupport=mysubplot(1,2,1); imagesc(hData.img.support); title('reconstruction support');
-%         hAxDensity=mysubplot(1,2,2);
+%         hAxSupport=subplot(1,2,1); imagesc(hData.img.support); title('reconstruction support');
+%         hAxDensity=subplot(1,2,2);
         limy=6*size(hData.img.dropletdensity,1)/2*[-1,1]-[0,1];
         limx=6*size(hData.img.dropletdensity,2)/2*[-1,1]-[0,1];
         imagesc(hData.img.dropletdensity,'XData',limx,'YData',limy); title('calculated droplet density');
