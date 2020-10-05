@@ -5,7 +5,7 @@ function obj = configIPR(obj)
     obj.random_phase                    = false;                % use random starting phase
     
     obj.masking.constraint_RMask        = false;                % cut large angle scattering signal above rmax
-    obj.masking.constraint_wedgeMask    = true;                % cut wedges in detector slit direction (for straylight)
+    obj.masking.constraint_wedgeMask    = false;                % cut wedges in detector slit direction (for straylight)
     obj.masking.constraint_gapMask      = false;                % cut gap slit (for straylight)
     obj.masking.dilate                  = false;                % dilate masked area (useful for straylight at detector edges)
     

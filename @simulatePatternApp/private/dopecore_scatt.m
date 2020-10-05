@@ -32,11 +32,11 @@ function [simData, simParameter] = dopecore_scatt(simData, simParameter)
     simData.scatt1 = abs(ft2(simData.scene1)).^2;
     simData.scatt2 = abs(ft2(simData.scene2)).^2;
     
-    figure(3245); clf
-    nexttile;
-    imagesc(angle(ft2(simData.scene1)), [-pi,pi]);
-    nexttile
-    imagesc(angle(ft2(simData.scene2)), [-pi,pi]);
+%     figure(3245); clf
+%     nexttile;
+%     imagesc(angle(ft2(simData.scene1)), [-pi,pi]);
+%     nexttile
+%     imagesc(angle(ft2(simData.scene2)), [-pi,pi]);
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%    THIS NEEDS TO BE PROPERLY CONVERTED! SWITCHED FROM PIXEL TO NM AND
 %%    DID NOT CORRECT THIS PART YET. 
