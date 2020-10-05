@@ -1,51 +1,46 @@
-case 'escape'
-    fig.UserData.stopScript = true;
-case 'leftarrow'
-prevfun;
-case 'rightarrow'
-    nextfun;  
-case 's'
-    saveimgfun;
-case 'l'
-    getfilefun;
-case 'c'
-    clc;
-    fig.Pointer = 'arrow'; drawnow;
-    try hipr.fig.rec.Pointer = 'arrow'; drawnow; end
-case 'r'
-    centerfun
-    shapefun
-    initIPR
-    %                 startDCDI
-    startIO
-case {'1','numpad1'}
-    centerfun;
-case {'2','numpad2'}
-    shapefun
-case {'3','numpad3'}
-    initIPR
-case {'4','numpad4'}
-    startDCDI
-case {'5','numpad5'}
-    startHIO
-case {'6','numpad6'}
-    startIO
-case {'7','numpad7'}
-    startER
-case {'8','numpad8'}
-%                 finishrecon
-    hipr.plotFinalResult;
-case {'9','numpad9'}
-    oneShotRecon
-case 'slash'
-    reconANDsave
-case 'z'
-    find_all_centers
-case 'p'
-    getGapAndShift
-case 'o'
-    getShapes
-case 'm'
-    img = centerAndCrop(img, center);
-    mask = ~isnan(img);
-    save(fullfile(paths.sim , 'simdata.mat'), 'img','mask')
+NAVIGATION
+--------------------------------------------------------------------------------
+leftarrow   =   previous hit
+rightarrow  =   next hit
+s           =   save database
+ctrl + s    =   save image
+shift + s   =   start simulation
+l           =   get file
+c           =   clear command window and mouse pointer
+
+DATA PREPARATION
+--------------------------------------------------------------------------------
+1           =   center image
+2           =   find droplet shape
+
+RECONSTRUCTION
+--------------------------------------------------------------------------------
+3           =   initialize iterative reconstruction with current data
+e           =   initialize iterative reconstruction with current simulation
+4           =   add current steps and loops to reconstruction plan using DCDI
+5           =   add current steps and loops to reconstruction plan using ER
+6           =   add current steps and loops to reconstruction plan using mDCDI
+7           =   add current steps and loops to reconstruction plan using ntHIO
+8           =   add current steps and loops to reconstruction plan using ntDCDI
+
+return      =   run reconstruction plan
+escape      =   stop reconstruction process
+
+{5,numpad5}
+    hIPR.reconAddToPlan(er,hData.var.nSteps,hData.var.nLoops);
+{6,numpad6}
+    hIPR.reconAddToPlan(mdcdi,hData.var.nSteps,hData.var.nLoops);
+{7,numpad7}
+    hIPR.reconAddToPlan(nthio,hData.var.nSteps,hData.var.nLoops);
+{8,numpad8}
+    hIPR.reconAddToPlan(ntdcdi,hData.var.nSteps,hData.var.nLoops);
+{9,numpad9}       
+{return},       hIPR.reconRunPlan;
+k, reconANDsave
+f12
+    hIPR.scanParameter(alpha, (0.5:0.05:1.5), hSave.folder);
+f11
+    hIPR.scanParameter(deltaFactor, (0:1:11), hSave.folder);
+{r,numpad0}
+    hIPR.resetIPR();
+    %             otherwise, disp(evt.Key);
