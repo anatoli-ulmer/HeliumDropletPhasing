@@ -1,6 +1,6 @@
 function obj = reconIterate(obj, nSteps, method)
     % preallocating space for error metrics
-    obj.errors=[obj.errors,nan(size(obj.errors,1),nSteps,'single','gpuArray')];
+    obj.errors=[obj.errors,nan(size(obj.errors,1),nSteps,'like',obj.errors)];
     
     for i=1:nSteps
         obj.W = ft2(obj.w);

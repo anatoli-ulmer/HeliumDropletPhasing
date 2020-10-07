@@ -8,7 +8,6 @@ function obj = initIPR(obj, pnCCDimg)
     end
     obj.SCATT = (single(pnCCDimg));
     obj.resizeData();
-%     obj.initGPU()
     obj.initMask();
     
     obj.initGUI();

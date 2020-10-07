@@ -8,15 +8,18 @@ shift + s   =   start simulation
 l           =   get file
 c           =   clear command window and mouse pointer
 
+
 DATA PREPARATION
 --------------------------------------------------------------------------------
 1           =   center image
 2           =   find droplet shape
 
+
 RECONSTRUCTION
 --------------------------------------------------------------------------------
 3           =   initialize iterative reconstruction with current data
 e           =   initialize iterative reconstruction with current simulation
+r OR 0      =   reset iterative reconstruction
 4           =   add current steps and loops to reconstruction plan using DCDI
 5           =   add current steps and loops to reconstruction plan using ER
 6           =   add current steps and loops to reconstruction plan using mDCDI
@@ -26,21 +29,9 @@ e           =   initialize iterative reconstruction with current simulation
 return      =   run reconstruction plan
 escape      =   stop reconstruction process
 
-{5,numpad5}
-    hIPR.reconAddToPlan(er,hData.var.nSteps,hData.var.nLoops);
-{6,numpad6}
-    hIPR.reconAddToPlan(mdcdi,hData.var.nSteps,hData.var.nLoops);
-{7,numpad7}
-    hIPR.reconAddToPlan(nthio,hData.var.nSteps,hData.var.nLoops);
-{8,numpad8}
-    hIPR.reconAddToPlan(ntdcdi,hData.var.nSteps,hData.var.nLoops);
-{9,numpad9}       
-{return},       hIPR.reconRunPlan;
-k, reconANDsave
-f12
-    hIPR.scanParameter(alpha, (0.5:0.05:1.5), hSave.folder);
-f11
-    hIPR.scanParameter(deltaFactor, (0:1:11), hSave.folder);
-{r,numpad0}
-    hIPR.resetIPR();
-    %             otherwise, disp(evt.Key);
+
+AUTOMATIC RECONSTRUCTION SCRIPTS
+--------------------------------------------------------------------------------
+f11         =   scan for delta parameter
+f12         =   scan for alpha parameter
+k           =   run automated reconstruction for all consecutive hits & runs

@@ -2,6 +2,30 @@
 close all
 clear
 clc
+reset(0)
+beep off
+%% Change some default parameter
+
+set(0, 'defaultFigureColor', [1 1 1])
+scrSize = get(0,'ScreenSize');
+scrW = scrSize(3)-scrSize(1);
+scrH = scrSize(4)-scrSize(2);
+set(0, 'defaultFigurePosition', [.25 .25 .5 .5].*[scrW scrH scrW scrH])
+set(0, 'defaultFigurePaperUnits', 'centimeters')
+set(0, 'defaultFigurePaperSize', [29.6774316979100, 20.9840419481200])
+set(0, 'defaultFigurePaperPosition', [0, 0, 29.6774316979100, 20.9840419481200])
+set(0, 'defaultFigureColormap', imorgen)
+set(0, 'defaultAxesOuterPosition', [.0 .01 1 .99])
+set(0, 'defaultAxesBox', 'on')
+set(0, 'defaultAxesXGrid', 'on')
+set(0, 'defaultAxesYGrid', 'on')
+set(0, 'defaultAxesZGrid', 'on')
+set(0, 'defaultImageCreateFcn', @newImageFcn)
+set(0, 'defaultLineLineWidth', 2)
+set(0, 'defaultUicontrolBackgroundcolor', [1 1 1])
+
+%%
+
 
 paths.main = fileparts(fullfile(mfilename('fullpath')));
 addpath(genpath(paths.main));
@@ -30,7 +54,9 @@ pnccdGUI(paths,...
     'run',301, ...
     'hit', 1);
 
-
-
-
+function newImageFcn(src,~)
+    axis(src.Parent, 'image');
+    colorbar(src.Parent);
+    set(src.Parent,'YDir','normal','XGrid','off','YGrid','off','ZGrid','off');
+end
 

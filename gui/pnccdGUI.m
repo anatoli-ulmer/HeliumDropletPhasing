@@ -5,12 +5,11 @@ fprintf('\n\n\n\n\nStarting pnCCD GUI _/^\\_/^\\_\n\t\t\t... please be patient .
 db = loadDatabases(paths);
 %% Figure creation & initifullfile(mfilename('fullpath'),'..')alization of grapical objects
 hFig.main = findobj('Type','Figure','Name','pnccdGUI');
-if isempty(hFig.main)
+if isgraphics(hFig.main)
+    clf(hFig.main);
+else
     hFig.main = figure;
 end
-clf(hFig.main);
-% for performance reasons:
-hFig.main.GraphicsSmoothing=false;
 
 hFig.centering = gobjects(1);
 hFig.shape1 = gobjects(1);
@@ -18,11 +17,15 @@ hFig.shape2 = gobjects(1);
 hFig.simu = gobjects(1);
 hFig.simupol = gobjects(1);
 
+hTL.shape1 = gobjects(1);
+hTL.shape2 = gobjects(1);
+
 hAx.pnccd = gobjects(1);
 hAx.pnccd_CBar = gobjects(1);
 hAx.lit = gobjects(1);
 hAx.centering = gobjects(1);
-hAx.shape = gobjects(1);
+hAx.shape1 = gobjects(4);
+hAx.shape2 = gobjects(3);
 
 hPlt.pnccd = gobjects(1);
 hPlt.lit = gobjects(1);
@@ -214,6 +217,9 @@ initFcn;
     function createGUI(~,~)
         hFig.main.Visible = 'off';
         hFig.main.Name = 'pnccdGUI';
+        % for performance reasons:
+        hFig.main.GraphicsSmoothing=false;
+        hFig.main.NumberTitle='off';
         hFig.main.KeyPressFcn = @thisKeyPressFcn;
         hFig.main.KeyReleaseFcn = @thisKeyReleaseFcn;
         hFig.main.WindowButtonDownFcn = @thisWindowButtonDownFcn;
@@ -269,17 +275,17 @@ initFcn;
             'Units', 'normalized', 'Position', [.59 .55 .06 .04],...
             'Backgroundcolor', hFig.main.Color, 'Callback', @setCMap );
         
-        hFig.main_uicontrols.findCenter_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', 'find center',...
+        hFig.main_uicontrols.findCenter_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(1) find center',...
             'Units', 'normalized', 'Position', [.7 .76 .07 .05], 'Callback', @centerImgFcn);
-        hFig.main_uicontrols.findShape_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', 'find shape',...
+        hFig.main_uicontrols.findShape_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(2) find shape',...
             'Units', 'normalized', 'Position', [.7 .69 .07 .05], 'Callback', @findShapeFcn);
-        hFig.main_uicontrols.initIPR_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', 'init phasing',...
+        hFig.main_uicontrols.initIPR_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(3) init phasing',...
             'Units', 'normalized', 'Position', [.7 .62 .07 .05], 'Callback', @initIPR);
-        hFig.main_uicontrols.ER_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', 'add DCDI',...
+        hFig.main_uicontrols.ER_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(4) add DCDI',...
             'Units', 'normalized', 'Position', [.8 .76 .07 .05], 'Callback', @addDCDI );
-        hFig.main_uicontrols.HIO_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', 'add ntHIO',...
+        hFig.main_uicontrols.HIO_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(5) add ntHIO',...
             'Units', 'normalized', 'Position', [.8 .69 .07 .05], 'Callback', @addHIO );
-        hFig.main_uicontrols.finish_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', 'start plan',...
+        hFig.main_uicontrols.finish_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(return) start plan',...
             'Units', 'normalized', 'Position', [.8 .62 .07 .05], 'Callback', @runRecon );
         hFig.main_uicontrols.nSteps_edt = uicontrol(hFig.main, 'Style', 'edit',...
             'Units', 'normalized', 'Position', [.9 .76 .035 .05], 'String', '100',...
@@ -540,15 +546,9 @@ initFcn;
     %% Centering und Shape Determination
     function centerImgFcn(~,~)
         hFig.main.Pointer = 'watch'; drawnow;
-        if ~isgraphics(hFig.centering)
-            hFig.centering=findobj('Type','Figure','Tag','centerFigure');
-            if isempty(hFig.centering)
-                hFig.centering=figure('Tag','centerFigure');
-            end
-            figure(hFig.main);
-            hFig.centering.KeyPressFcn = @centerkeyfun;
-            hFig.centering.Name = 'centering';
-        end
+        hFig.centering = getFigure(hFig.centering, ...
+            'Name', 'Centering pattern',...
+            'KeyPressFcn', @centerkeyfun);
         %         if hit<=numel(db.center(run).center)
         %             if isfield(db.center(run).center(hit),'data')
         %                 if ~isempty(db.center(run).center(hit).data)
@@ -596,10 +596,8 @@ initFcn;
                 %                 save('E:\XFEL2019_He\db_center.mat','db.center')
             case {'1', 'numpad1'}
                 centerImgFcn;
-                figure(1010102);
             case {'2', 'numpad2'}
                 findShapeFcn;
-                figure(1010102);
             case {'3', 'numpad3'}
                 initIPR
             case {'0', 'numpad0'}
@@ -614,21 +612,25 @@ initFcn;
     end % centerkeyfun
     function findShapeFcn(~,~)
         hFig.main.Pointer = 'watch'; drawnow;
-        if ~isgraphics(hFig.shape1)
-            hFig.shape1 = figure(1010103);
-            hFig.shape1.Name = 'shape figure #1';
+        hFig.shape1 = getFigure(hFig.shape1, 'Name', 'shape figure #1');
+        hFig.shape2 = getFigure(hFig.shape2, 'Name', 'shape figure #2');
+        if ~isgraphics(hAx.shape1(1))
+            hTL.shape1=tiledlayout(hFig.shape1,1,4);
+            hAx.shape1(1)=nexttile(hTL.shape1);
+            hAx.shape1(2)=nexttile(hTL.shape1);
+            hAx.shape1(3)=nexttile(hTL.shape1);
+            hAx.shape1(4)=nexttile(hTL.shape1);
         end
-        if ~isgraphics(hFig.shape2)
-            hFig.shape2 = findobj('Type','Figure','Name','shape figure #2');
-            if isempty(hFig.shape2)
-                hFig.shape2 = figure;
-                hFig.shape2.Name = 'shape figure #2';
-            end
+        if ~isgraphics(hAx.shape2(1))
+            hTL.shape2=tiledlayout(hFig.shape2,1,3);
+            hAx.shape2(1)=nexttile(hTL.shape2);
+            hAx.shape2(2)=nexttile(hTL.shape2);
+            hAx.shape2(3)=nexttile(hTL.shape2);
         end
-        if ~isgraphics(hAx.shape)
-            hAx.shape=subplot(1,2,2,'parent',hFig.shape2); 
-        end
-        [hData.shape, hAx.shape] = findShapeFit(hData.img.dataCropped, hData.var.radiusInPixel, 'fig1', hFig.shape1, 'fig2', hFig.shape2, 'ax', hAx.shape);
+        [hData.shape, hAx.shape2] = findShapeFit(...
+            hData.img.dataCropped, hData.var.radiusInPixel, ...
+            'fig1', hFig.shape1, 'fig2', hFig.shape2, ...
+            'ax1', hAx.shape1, 'ax2', hAx.shape2);
         db.shape(run).shape(hit).data = hData.shape;
         db.shape(run).shape(hit).R = 6*(hData.shape.a/2 + hData.shape.b/2)/2;
         db.shape(run).shape(hit).ar = iif(hData.shape.a>hData.shape.b, hData.shape.a/hData.shape.b, hData.shape.b/hData.shape.a);
@@ -636,22 +638,18 @@ initFcn;
         hData.img.dropletOutline = ellipse_outline(hData.shape.a/2*6, hData.shape.b/2*6, hData.shape.rot);
         fprintf('ellipse parameters: \n[a, b, rot] = [%.2fpx, %.2fpx, %.2frad]\n', hData.shape.a/2,hData.shape.b/2,hData.shape.rot)
         fprintf('[a, b, rot] = [%.2fnm, %.2fnm, %.2fdegree]\n', hData.shape.a/2*6,hData.shape.b/2*6,hData.shape.rot/2/pi*360)
-        %         hData.img.support = imopen(hData.img.support,strel('disk',2,0));
-        %         hData.img.support =
-        %         imdilate(hData.img.support,strel('square',2));
-        %         hData.img.support = imerode(hData.img.support,strel('disk',1,0));
-        %         hData.img.support = imopen(hData.img.support,strel('disk',4,0));
-        figure(4949494); clf
-%         hAxSupport=subplot(1,2,1); imagesc(hData.img.support); title('reconstruction support');
-%         hAxDensity=subplot(1,2,2);
-        limy=6*size(hData.img.dropletdensity,1)/2*[-1,1]-[0,1];
-        limx=6*size(hData.img.dropletdensity,2)/2*[-1,1]-[0,1];
-        imagesc(hData.img.dropletdensity,'XData',limx,'YData',limy); title('calculated droplet density');
-        colormap('igray'); hold('on');
-        plot(hData.img.dropletOutline.x,hData.img.dropletOutline.y,'r--');
+        xData=6*( size(hData.img.dropletdensity,2)*[-0.5,0.5]-[0,1]);
+        yData=6*( size(hData.img.dropletdensity,1)*[-0.5,0.5]-[0,1]);
+        xyLims=db.shape(run).shape(hit).R*1.2*[-1,1];
+        imagesc(hAx.shape2(3), xData ,yData ,hData.img.dropletdensity); 
+        title('calculated droplet density');
+        colormap(hAx.shape2(3),'igray'); hold(hAx.shape2(3),'on');
+        plot(hAx.shape2(3),hData.img.dropletOutline.x,hData.img.dropletOutline.y,'r--');
+
+        set(hAx.shape2(3), 'XLim', xyLims, 'YLim', xyLims);
 %         linkaxes([hAxSupport,hAxDensity],'xy');
-        xlim([-1,1]*mean([hData.shape.a,hData.shape.a])/2*1.2*6); ylim(xlim);
-        figure(hFig.main)
+%         xlim([-1,1]*mean([hData.shape.a,hData.shape.a])/2*1.2*6); ylim(xlim);
+%         figure(hFig.main)
         hFig.main.Pointer = 'arrow'; drawnow;
         updatePlotsFcn;
         fprintf('    -> shape found\n')

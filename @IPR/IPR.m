@@ -1,6 +1,9 @@
 classdef IPR < handle
     properties
+        %% General
+        gpuAvailable                                                            % number of available gpu devices
         %% Fourier space variables
+        pnCCDimg
         SCATT                                                                   % Scattering pattern
         AMP0                                                                    % Start Fourier space amplitude
         AMP                                                                     % current Fourier space amplitude
@@ -25,34 +28,34 @@ classdef IPR < handle
         rati
         oneshot                                                                 % complex valued Real space reconstruction after one step
         support_dilate = false                                                  % boolian switch - dilate start Support // see support_dilateFactor, support_dilateMethod
-        support_dilateFactor = 2 * ones(1, 'single', 'gpuArray')                % factor for kernel for dlating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateMethod
+        support_dilateFactor = 2 * ones(1, 'single')                            % factor for kernel for dlating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateMethod
         support_dilateMethod = 'disk';                                          % kernel method for dilating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateFactor
         dropletOutline
         %% Reconstruction parameter
         reconPlan
-        errors = nan(5,1, 'single', 'gpuArray')
-        noise = gpuArray(single(1.0))                                           % noise amplitude estimation value, noise = rms(noiseMatrix) = rms(NOISEMatrix)
+        errors = nan(5,1, 'single')
+        noise = (single(1.0))                                                   % noise amplitude estimation value, noise = rms(noiseMatrix) = rms(NOISEMatrix)
         noiseMatrix                                                             % noise amplitude estimation matrix in Real space
         NOISEMatrix                                                             % noise amplitude estimation matrix in Fourier space
-        overSamplingRatio = ones(1, 'single', 'gpuArray')
-        beta0 = 0.9*ones(1, 'single', 'gpuArray')
-        beta = 0.9*ones(1, 'single', 'gpuArray')
-        support_radius = 70*ones(1, 'single', 'gpuArray')
+        overSamplingRatio = ones(1, 'single')
+        beta0 = 0.9*ones(1, 'single')
+        beta = 0.9*ones(1, 'single')
+        support_radius = 70*ones(1, 'single')
         nTotal = ones(1, 'uint32')
         random_phase = false;
-        alpha = 1.0 * ones(1, 'single', 'gpuArray')
-        delta = 0.1 * ones(1, 'single', 'gpuArray')
-        deltaFactor = 5*ones(1, 'single', 'gpuArray')
-        phaseMin = -Inf * ones(1, 'single', 'gpuArray')
+        alpha = 1.0 * ones(1, 'single')
+        delta = 0.1 * ones(1, 'single')
+        deltaFactor = 5*ones(1, 'single')
+        phaseMin = -Inf * ones(1, 'single')
         mixScatt = false
         masking
         doERstep = false
         %% image properties
-        center% = nan(1,2, 'single', 'gpuAqrray');
-        imgsize% = ones(1,2, 'single', 'gpuAqrray');
+        center = nan(1,2, 'single');
+        imgsize = ones(1,2, 'single');
         xx
         yy
-        binFactor = gpuArray(single(0.5));                                      % 1 | 0.5 | 0.25 - factor for image binning before reconstruction
+        binFactor = (single(0.5));                                              % 1 | 0.5 | 0.25 - factor for image binning before reconstruction
         binMethod = 'bilinear';                                                 % 'nearest' | 'bilinear' | 'bicubic' - method for image binning before reconstruction
         clims_scatt = log10([0.1, 60]);
         clims_recon = nan(1,2);
@@ -67,15 +70,14 @@ classdef IPR < handle
         constraint_RMask = false;
         constraint_wedgeMask = false;
         constraint_gapMask = false;
-        RMASK_smoothPix = gpuArray(single(10));
-        reconpart string = 'real';
-        intpart double = 1;
-        reconrange uint8 = 1;
+        RMASK_smoothPix = single(10.0);
+        reconpart char = 'real';
+        intpart = uint8(1);
+        reconrange = uint8(1);
         rec_cm char = 'wjet';                                                   % colormap for Real space axes
         int_cm char = 'imorgen';                                                % colormap for Fourier space axes
-        subscale = gpuArray(single(1));                                         % factor for droplet density subtraction before plotting (applied for plotting only!)
-        rhoThreshold = gpuArray(single(1));                                     % Dunno what this did ...
-        nStepsUpdatePlot = gpuArray(uint32(100));                               % update plots after how many steps
+        subscale = 1.0;                                                         % factor for droplet density subtraction before plotting (applied for plotting only!)
+        nStepsUpdatePlot = uint32(100);                                          % update plots after how many steps
         %% plot object
         parentfig = gobjects(1,1)                                               % handle for parent figure
         figureArray = gobjects(1,1)                                             % handle for IPR main figure
@@ -90,7 +92,8 @@ classdef IPR < handle
     methods
 
         %% INIT
-        function obj = IPR(pnCCDimg, varargin)                                  
+        function obj = IPR(pnCCDimg, varargin)
+            obj.pnCCDimg = pnCCDimg;
             % Main figure for iterative phase retrieval. Copies the
             % KeyPressFcn Callback from Calling figure.
             if mod(numel(varargin),2)~=0
@@ -102,15 +105,17 @@ classdef IPR < handle
             for i=1:2:numel(varargin)
                 obj.(varargin{i})=varargin{i+1};
             end
+            obj.initGPU();
             % init
             obj.initIPR(pnCCDimg);
         end
         
         %% DECLARATION
         obj = configIPR(obj)                                                    % load standard values from config file
+        obj = initGPU(obj)
         obj = initIPR(obj, pnCCDimg)                                            % initialization function                                                    % initialization funciton for GPU arrays
         obj = initMask(obj)                                                     % initialize masks
-        obj = initGUI(obj)                                                    % generate figure and plot objects
+        obj = initGUI(obj)                                                      % generate figure and plot objects
         obj = resizeData(obj)                                                   % rebin and resize data
         obj = resetIPR(obj,varargin)                                            % reset variables to starting values
         [noise, noiseMatrix, NOISEMatrix] = calcNoise(AMP0)                     % calculate noise amplitude

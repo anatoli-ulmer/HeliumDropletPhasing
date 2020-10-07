@@ -3,8 +3,8 @@ function obj = initMask(obj)
     obj.MASK = (~isnan(obj.SCATT));
 
     [obj.xx, obj.yy] = meshgrid(...
-        gpuArray.linspace(1,obj.imgsize(2),obj.imgsize(2)) - obj.center(2),...
-        gpuArray.linspace(1,obj.imgsize(1),obj.imgsize(1)) - obj.center(1) );
+        linspace(1,obj.imgsize(2),obj.imgsize(2)) - obj.center(2),...
+        linspace(1,obj.imgsize(1),obj.imgsize(1)) - obj.center(1) );
 
     obj.MASK = ( obj.MASK & ~isnan(obj.SCATT) );
     obj.MASK = ( obj.MASK & (obj.xx.^2+obj.yy.^2 >= obj.masking.rmin.^2) );

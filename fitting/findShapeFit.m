@@ -1,4 +1,4 @@
-function [f, ax2] = findShapeFit(img,rpix,varargin)
+function [f, fig2axes] = findShapeFit(img,rpix,varargin)
 
 rpix = rpix*2; %because autocorrelation
 dpix = 15;
@@ -13,7 +13,8 @@ nprofs = 100;
 thresh = 1/12;
 fig1 = [];
 fig2 = [];
-ax2 = [];
+fig1axes = [];
+fig2axes = [];
 
 if exist('varargin','var')
     L = length(varargin);
@@ -22,7 +23,8 @@ if exist('varargin','var')
         switch lower(varargin{ni})
             case 'fig1', fig1 = varargin{ni+1};
             case 'fig2', fig2 = varargin{ni+1};
-            case 'ax', ax2 = varargin{ni+1};
+            case 'ax1', fig1axes = varargin{ni+1};
+            case 'ax2', fig2axes = varargin{ni+1};
         end
     end
 end
@@ -86,36 +88,25 @@ lprofx = cell2mat(arrayfun(@(i) (rmin:rmax)', 1:nprofs, 'UniformOutput', false))
 lprofy = cell2mat(arrayfun(@(i) dstep*i/size(fpol,1)*360+fpol(round(dstep*i),:)'*10, 1:nprofs, 'UniformOutput', false));
 x = rmin:rmax;
 
-if isempty(fig1)
-    fig1 = figure(6868686); clf
-end
-clf(fig1)
-sub(1) = subplot(1,4,1,'parent',fig1); 
-plt(1)=imagesc(pol,'YData',[0,360],'XData',[rmin,rmax],'parent',sub(1), [-1,1]);
-
-sub(2) = subplot(1,4,2,'parent',fig1); 
-plt(2)=imagesc(fpol,'YData',[0,360],'XData',[rmin,rmax],'parent',sub(2), [-1,1]);
-
-sub(3) = subplot(1,4,3,'parent',fig1); 
-plot(sub(3),lprofx,lprofy); 
-
-sub(4) = subplot(1,4,4,'parent',fig1); 
-plot(sub(4),maxpol, (1:numel(maxpol))/size(pol,1)*360, maxfpol,(1:numel(maxfpol))/size(fpol,1)*360,...
+imagesc(fig1axes(1),[rmin,rmax],[0,360],pol, [-1,1]);
+imagesc(fig1axes(2),[rmin,rmax],[0,360],fpol, [-1,1]);
+plot(fig1axes(3),lprofx,lprofy); 
+plot(fig1axes(4),maxpol, (1:numel(maxpol))/size(pol,1)*360, maxfpol,(1:numel(maxfpol))/size(fpol,1)*360,...
     x, ones(1,numel(x))*360*thresh, 'g--',...
     x, ones(1,numel(x))*360*(.5-thresh), 'g--',...
     x, ones(1,numel(x))*360*(.5+thresh), 'g--',...
     x, ones(1,numel(x))*360*(1-thresh), 'g--');
 
-title(sub(1), 'weighted real part');
-title(sub(2), 'filtered real part');
-title(sub(3), 'traces of real part');
-title(sub(4), 'position of maximum');
+title(fig1axes(1), 'weighted real part');
+title(fig1axes(2), 'filtered real part');
+title(fig1axes(3), 'traces of real part');
+title(fig1axes(4), 'position of maximum');
 
-arrayfun(@(i) colorbar(sub(i), 'off'), 1:4);
-arrayfun(@(i) xlabel(sub(i), 'radius in px'), 1:4);
-arrayfun(@(i) ylabel(sub(i), 'angle in degree'), 1:4);
-arrayfun(@(i) colormap(sub(i), r2b), 1:2);
-arrayfun(@(i) set(sub(i),'YDir','normal','YTick',0:30:360,...
+arrayfun(@(i) colorbar(fig1axes(i), 'off'), 1:4);
+arrayfun(@(i) xlabel(fig1axes(i), 'radius in px'), 1:4);
+arrayfun(@(i) ylabel(fig1axes(i), 'angle in degree'), 1:4);
+arrayfun(@(i) colormap(fig1axes(i), r2b), 1:2);
+arrayfun(@(i) set(fig1axes(i),'YDir','normal','YTick',0:30:360,...
     'XLim',[rmin,rmax],'YLim',[0,360],'PlotBoxAspectRatioMode','auto',...
     'DataAspectRatioMode','auto'), 1:4);
 
@@ -143,24 +134,25 @@ warning('on','curvefit:cfit:subsasgn:coeffsClearingConfBounds');
 
 phi_array = linspace(0,2*pi,size(fpol,1));
 
-if isempty(fig2)
-    fig2 = figure(8686868);
-end
-clf(fig2)
-ax1=mysubplot(1,2,1,'parent',fig2);
-if isempty(ax2); ax2=mysubplot(1,2,2,'parent',fig2); end
-if ~isvalid(ax2); ax2=mysubplot(1,2,2,'parent',fig2); end
+ellipseX = size(img,2)/2+1+ellipse_fitfcn(phi_array, f.a, f.b, f.rot).*cos(phi_array);
+ellipseY = size(img,1)/2+1+ellipse_fitfcn(phi_array, f.a, f.b, f.rot).*sin(phi_array);
+ellipse2X = size(img,2)/2+1+ellipse_fitfcn(phi_array, f.a/2, f.a/2, f.rot).*cos(phi_array);
+ellipse2Y = size(img,1)/2+1+ellipse_fitfcn(phi_array, f.a/2, f.a/2, f.rot).*sin(phi_array);
 
-xell = size(img,2)/2+1+ellipse_fitfcn(phi_array, f.a, f.b, f.rot).*cos(phi_array);
-yell = size(img,1)/2+1+ellipse_fitfcn(phi_array, f.a, f.b, f.rot).*sin(phi_array);
-xell2 = size(img,2)/2+1+ellipse_fitfcn(phi_array, f.a/2, f.a/2, f.rot).*cos(phi_array);
-yell2 = size(img,1)/2+1+ellipse_fitfcn(phi_array, f.a/2, f.a/2, f.rot).*sin(phi_array);
+xLims=rpix*1.2*[-1,1]+size(R,2)/2;
+yLims=rpix*1.2*[-1,1]+size(R,1)/2;
 
-imagesc(real(R),'parent',ax1); colormap(ax1,r2b); hold(ax1, 'on'); zoom(ax1, 5);
-imagesc(real(R),'parent',ax2); colormap(ax2,r2b); hold(ax2, 'on'); zoom(ax2, 5);
-set(ax1, 'XLim', size(R,2)/2+rpix*2*[-1,1], 'YLim', size(R,1)/2+rpix*2*[-1,1])
-set(ax2, 'XLim', size(R,2)/2+rpix*2*[-1,1], 'YLim', size(R,1)/2+rpix*2*[-1,1])
-plot(ax2,xmax, ymax, 'kx', 'MarkerSize',3,'LineWidth',.1);
-plot(ax2,xmax_copy, ymax_copy, 'rx', 'MarkerSize',2);
-plot(ax2,xell, yell, 'g--')
-plot(ax2,xell2, yell2, 'g--')
+imagesc(real(R),'parent',fig2axes(1)); 
+colormap(fig2axes(1),r2b);
+set(fig2axes(1),'XLim',xLims,'YLim',yLims);
+
+
+hold(fig2axes(2), 'off'); 
+imagesc(real(R),'parent',fig2axes(2)); 
+colormap(fig2axes(2),r2b); 
+hold(fig2axes(2), 'on');
+plot(fig2axes(2),xmax, ymax, 'kx', 'MarkerSize',3,'LineWidth',.1);
+plot(fig2axes(2),xmax_copy, ymax_copy, 'rx', 'MarkerSize',2);
+plot(fig2axes(2),ellipseX, ellipseY, 'g--')
+plot(fig2axes(2),ellipse2X, ellipse2Y, 'g--')
+set(fig2axes(2),'XLim',xLims,'YLim',yLims);
