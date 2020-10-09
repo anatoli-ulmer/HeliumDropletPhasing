@@ -5,7 +5,7 @@ rightarrow  =   next hit
 s           =   save database
 ctrl + s    =   save image
 shift + s   =   start simulation
-l           =   get file
+l           =   load file
 c           =   clear command window and mouse pointer
 
 
@@ -22,11 +22,10 @@ e           =   initialize iterative reconstruction with current simulation
 r OR 0      =   reset iterative reconstruction
 4           =   add current steps and loops to reconstruction plan using DCDI
 5           =   add current steps and loops to reconstruction plan using ER
-6           =   add current steps and loops to reconstruction plan using mDCDI
-7           =   add current steps and loops to reconstruction plan using ntHIO
-8           =   add current steps and loops to reconstruction plan using ntDCDI
+6           =   add current steps and loops to reconstruction plan using ntHIO
+7           =   add current steps and loops to reconstruction plan using ntDCDI
 
-return      =   run reconstruction plan
+enter       =   run reconstruction plan
 escape      =   stop reconstruction process
 
 
