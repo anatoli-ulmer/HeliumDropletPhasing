@@ -151,7 +151,7 @@ initFcn;
             case {'8','numpad8'}
             case {'9','numpad9'}       
             case {'return'},            runRecon;
-            case {'r','numpad0'},       resetRecon;
+            case {'0','numpad0'},       resetRecon;
             case 'k',                   reconANDsave;
             case 'f12'
                 hIPR.scanParameter('alpha', (0.5:0.05:1.5), hSave.folder);
@@ -590,10 +590,10 @@ initFcn;
 %         save(fullfile(paths.db, 'db.mat'), 'db');
         fprintf('    -> centered\n')
     end % centerImgFcn
-    function centerkeyfun(~, eventdata)
+    function centerkeyfun(~,evt)
         hFig.main.Pointer = 'watch'; drawnow;
         dc = 1;
-        switch eventdata.Key
+        switch evt.Key
             case 'uparrow'
                 hData.var.center(1)=hData.var.center(1)+dc;
             case 'downarrow'

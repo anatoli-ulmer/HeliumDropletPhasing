@@ -36,6 +36,6 @@ for ind = 1:nRings
     yunit = [yunit, r * sin(th) + center(1), nan];
 end
 hRingPlots = plot(hAx, xunit, yunit, 'Color', ringColor, ...
-    'LineWidth', ringWidth, 'LineStyle', ringStyle);  %#ok<AGROW>
+    'LineWidth', ringWidth, 'LineStyle', ringStyle);
 hAx.XLim = lims(1:2);
 hAx.YLim = lims(3:4);
