@@ -4,6 +4,28 @@ clear
 clc
 reset(0)
 beep off
+
+%% Setup paths
+
+paths.main = fileparts(fullfile(mfilename('fullpath')));
+addpath(genpath(paths.main));
+pathFile = fullfile(paths.main,'paths.mat');
+if exist(pathFile,'file')
+    load(pathFile)
+else
+    warning('Function path config file not found. Using standard values.')
+    %% define your storage path here if necessary:
+    paths.storage = fullfile(paths.main,'storage');
+    paths.analysis = fullfile(paths.storage, 'analysis');
+    paths.db = fullfile(paths.main, 'db');
+    paths.img = fullfile(paths.storage, 'img');
+    paths.recon = fullfile(paths.storage, 'recon');
+    paths.pnccd_dcg = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain');
+    paths.pnccd_dcgb = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain_bg');
+    paths.pnccd = paths.pnccd_dcg;
+    save(pathFile, 'paths')
+end
+
 %% Change some default parameter
 
 set(0, 'defaultFigureColor', [1 1 1])
@@ -23,28 +45,6 @@ set(0, 'defaultAxesZGrid', 'on')
 set(0, 'defaultImageCreateFcn', @newImageFcn)
 set(0, 'defaultLineLineWidth', 2)
 set(0, 'defaultUicontrolBackgroundcolor', [1 1 1])
-
-%%
-
-
-paths.main = fileparts(fullfile(mfilename('fullpath')));
-addpath(genpath(paths.main));
-pathFile = fullfile(paths.main,'paths.mat');
-if exist(pathFile,'file')
-    load(pathFile)
-else
-    warning('Function path config file not found. Using standard values.')
-    %% define your storage path here if necessary:
-    paths.storage = fullfile(paths.main,'storage\');
-    paths.analysis = fullfile(paths.storage, 'analysis');
-    paths.db = fullfile(paths.main, 'db');
-    paths.img = fullfile(paths.storage, 'img');
-    paths.recon = fullfile(paths.storage, 'recon');
-    paths.pnccd_dcg = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain');
-    paths.pnccd_dcgb = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain_bg');
-    paths.pnccd = paths.pnccd_dcg;
-    save(pathFile, 'paths')
-end
 %% switch off for performance reasons if necessary:
 % set(groot,'DefaultFigureGraphicsSmoothing','off')
 
