@@ -226,7 +226,7 @@ initFcn;
         
         hAx.pnccd = axes('OuterPosition', [.0 .0 .55 .95]);
         hAx.pnccd.Tag = 'pnccd';
-        hAx.lit = axes('OuterPosition', [.525 .025 .5 .25]);
+        hAx.lit = axes('OuterPosition', [.525 .025 .5 .35]);
         hAx.lit.Tag = 'lit';
         
         hFig.main_uicontrols.CMin_edt = uicontrol(hFig.main, 'Style', 'edit', 'String', '0.1',...
@@ -269,7 +269,7 @@ initFcn;
             'Backgroundcolor', hFig.main.Color);
         hFig.main_uicontrols.cMap_edt = uicontrol(hFig.main, 'Style', 'edit', 'String', 'imorgen',...
             'Units', 'normalized', 'Position', [.53 .49 .06 .04],...
-            'Backgroundcolor', hFig.main.Color);
+            'Backgroundcolor', hFig.main.Color, 'Callback', @setCMap);
         hFig.main_uicontrols.cMap_txt = uicontrol(hFig.main, 'Style', 'text', 'String', 'colormap',...
             'Units', 'normalized', 'Position', [.53 .53 .06 .04],...
             'Backgroundcolor', hFig.main.Color);
@@ -278,7 +278,7 @@ initFcn;
             'Units', 'normalized', 'Position', [.65 .8 .1 .05], 'Callback', @centerImgFcn);
         hFig.main_uicontrols.findShape_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(2) find shape',...
             'Units', 'normalized', 'Position', [.77 .8 .1 .05], 'Callback', @findShapeFcn);
-        hFig.main_uicontrols.startSimulation_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', 'start simulation',...
+        hFig.main_uicontrols.startSimulation_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(w) start simulation',...
             'Units', 'normalized', 'Position', [.77 .74 .10 .05], 'Callback', @startSimulation);
         hFig.main_uicontrols.initIPR_btn = uicontrol(hFig.main, 'Style', 'pushbutton', 'String', '(3) init IPR data',...
             'Units', 'normalized', 'Position', [.65 .68 .1 .05], 'Callback', @initIPR);
@@ -332,12 +332,13 @@ initFcn;
         colormap(hAx.pnccd, hData.par.cMap);
         plotRings;
         
-        cla(hAx.lit); hold(hAx.lit, 'off');
-        hPlt.lit = stem(hAx.lit, db.runInfo(run).nlit_smooth);
-        %         hPlt.lit.ButtonDownFcn = @thisWindowButtonDownFcn;
-        hold(hAx.lit, 'on'); grid(hAx.lit, 'on');
-        hPlt.lit_current = stem(hAx.lit, hit, hData.var.nLitPixel, 'r');
-        
+        cla(hAx.lit); 
+        hold(hAx.lit, 'off');
+        hPlt.lit = stem(hAx.lit, db.runInfo(run).nlit_smooth, 'LineWidth', 1);
+        hold(hAx.lit, 'on'); 
+        grid(hAx.lit, 'on');
+        hPlt.lit_current = stem(hAx.lit, hit, hData.var.nLitPixel, 'r', ...
+            'LineWidth', 1);
         hAx.lit.XLim = [.75, numel(db.runInfo(run).nlit_smooth)+.25];
         hAx.lit.Title.String = 'lit pixel over hit index';
         hAx.pnccd.UserData = [hAx.pnccd.XLim; hAx.pnccd.YLim];
@@ -378,7 +379,7 @@ initFcn;
         end
     end % plotRings
     function setCMap(~,~)
-        hData.par.cMap = hFig.main_uicontrols.cMap_txt.String;
+        hData.par.cMap = hFig.main_uicontrols.cMap_edt.String;
         colormap(hAx.pnccd, hData.par.cMap);
     end % setCMap
     function manualCLimChange(~,~)
@@ -486,8 +487,8 @@ initFcn;
     function loadNextHit(src,evt,direction)
         if nargin<3
             switch src.String
-                case 43, direction = -1;
-                case 45, direction = 1;
+                case 60, direction = -1;
+                case 62, direction = 1;
                 otherwise
                     error('Error in pnccdGUI/loadNextHit: direction not defined and caller function is not the "+" or "-" button callback.')
             end
@@ -699,19 +700,19 @@ initFcn;
         hIPR.figureArray.Pointer = 'arrow'; drawnow;
     end % initIPRsim
     function addToPlanER(~,~)
-        hIPR.reconAddToPLan('er',hData.var.nSteps,hData.var.nLoops);
+        hIPR.reconAddToPlan('er',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanER
     function addToPlanDCDI(~,~)
-        hIPR.reconAddToPLan('dcdi',hData.var.nSteps,hData.var.nLoops);
+        hIPR.reconAddToPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanDCDI
     function addToPlanNTDCDI(~,~)
-        hIPR.reconAddToPLan('ntdcdi',hData.var.nSteps,hData.var.nLoops);
+        hIPR.reconAddToPlan('ntdcdi',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanNTDCDI
     function addToPlanNTHIO(~,~)
-        hIPR.reconAddToPLan('ntdcdi',hData.var.nSteps,hData.var.nLoops);
+        hIPR.reconAddToPlan('nthio',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanNTHIO
     function resetRecon(~,~)
-        hIPR.reconAddToPLan('dcdi',hData.var.nSteps,hData.var.nLoops);
+        hIPR.resetIPR();
     end % resetRecon
     function runRecon(~,~)
         hIPR.reconRunPlan();

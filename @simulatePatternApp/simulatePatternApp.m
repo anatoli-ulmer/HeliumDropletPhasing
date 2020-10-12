@@ -135,7 +135,6 @@ classdef simulatePatternApp < handle
             app.editObjArray(12).String = app.simParameter.nPhotonsOnDetector;
             % Rest
             app.editObjArray(13).String = app.simParameter.savepath;
-            drawnow;
         end
         function app = updatePlot(app,evt)
             app.imgObjArray(1).CData = app.simData.scene1 - ...
@@ -212,8 +211,8 @@ classdef simulatePatternApp < handle
             end
             
             app.simData.dataCropped(~app.simData.mask) = nan;
-            app = updateEditFields(app);
-            app = startSimulation(app);
+            app.updateEditFields();
+            app.startSimulation();
             app.simParameter.isValidApp = true;
         end
         function app = thisKeyReleaseFcn(app,~,evt)
@@ -223,7 +222,7 @@ classdef simulatePatternApp < handle
                 case 'm'
 %                     app.x2_edt.String=num2str(-str2double(app.x1_edt.String));
 %                     app.y2_edt.String=num2str(-str2double(app.y1_edt.String));
-                    app = startSimulation(app);
+                    app.startSimulation();
             end
         end
         function thisCloseRequestFcn(app,src,evt)
@@ -240,8 +239,12 @@ classdef simulatePatternApp < handle
             fWidth = 1280;
             fHeight = 800;
             
-            app.figObj = figure(513714); clf(app.figObj); drawnow;
+            app.figObj = getFigure(app.figObj, ...
+                'Name', 'Simulate Scattering', ...
+                'Tag', 'simFigure');
+            clf(app.figObj);
             app.figObj.Visible = 'off';
+            drawnow;
             app.figObj.Color = [1 1 1];
             app.figObj.Position = [200 200 fWidth fHeight];
             app.figObj.Name = 'Simulate Scattering';
