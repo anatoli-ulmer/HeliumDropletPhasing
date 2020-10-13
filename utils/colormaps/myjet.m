@@ -1,16 +1,16 @@
 function p = myjet(m)
-%FIRE   Blue-Purple Hot colormap
+%MYJET   colormap
 % 
-% FIRE(M) returns an M-by-3 matrix containing a "fire" colormap.
-% FIRE, by itself, is the same length as the current figure's
+% MYJET(M) returns an M-by-3 matrix containing a "jet-like" colormap.
+% MYJET, by itself, is the same length as the current figure's
 % colormap. If no figure exists, MATLAB creates one.
 %
 % To add this colormap as a default map, use 'addpath' with the 
-% directory containing 'fire.m'.
+% directory containing 'myjet.m'.
 %
-% To reset the colormap of the current figure use 'colormap(fire)'.
+% To reset the colormap of the current figure use 'colormap(myjet)'.
 %
-% see also:  HSV, GRAY, HOT, COOL, BONE, COPPER, FLAG, PINK, COLORMAP,
+% see also:  JET, HSV, GRAY, HOT, COOL, BONE, COPPER, FLAG, PINK, COLORMAP,
 % RGBPLOT.
 %
 % To create any custom colormap, see the directions on line 23 of this
@@ -24,7 +24,7 @@ end
 %between 0 and 1 to create a new colormap file.  Use copy / paste to create
 %a matrix like the one below, you do not have to add these values
 %manually.  To create a new colormap, change 'cmap_mat' to the desired
-%matrix, rename the function *and* the m-file from 'fire' to your desired
+%matrix, rename the function *and* the m-file from 'myjet' to your desired
 %colormap name.
 
 cmap_mat=[

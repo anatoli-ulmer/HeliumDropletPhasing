@@ -26,6 +26,7 @@ classdef IPR < handle
         rho                                                                     % current droplet density
         rho0                                                                    % start droplet density
         rati
+        simScene
         oneshot                                                                 % complex valued Real space reconstruction after one step
         support_dilate = false                                                  % boolian switch - dilate start Support // see support_dilateFactor, support_dilateMethod
         support_dilateFactor = 2 * ones(1, 'single')                            % factor for kernel for dlating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateMethod
@@ -123,8 +124,9 @@ classdef IPR < handle
         obj = reconAddToPLan(obj, method, nSteps, nLoops)
         obj = reconRunPlan(obj, method, nSteps, nLoops)
         obj = reconIterate(obj, nSteps, method)
-        obj = reconApplyConstraints(obj, method)                                             
-        errors = calcErrors(ws,rho,support,W,AMP0,MASK)
+        obj = reconApplyConstraints(obj, method)         
+        obj = calcError(obj)
+%         errors = calcErrors(ws,rho,support,W,AMP0,MASK)
         WS = projectorModulus(AMP, AMP0, PHASE, MASK)
         
         beta = updateBeta(beta0, beta, nTotal)

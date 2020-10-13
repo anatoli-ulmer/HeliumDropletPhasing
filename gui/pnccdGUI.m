@@ -686,16 +686,21 @@ initFcn;
                 'Please start a simulation first.'])
         end
         clear hIPR;
-        if hData.par.nSimCores, simData=hSimu.simData.scatt1;
-        else, simData=hSimu.simData.scatt2;
+        if hData.par.nSimCores
+            simScene=hSimu.simData.scene1;
+            simScatt=hSimu.simData.scatt1;
+        else
+            simScene=hSimu.simData.scene2;
+            simScatt=hSimu.simData.scatt2;
         end
-        simData=centerAndCropFcn(simData,[513,513]);
-        hIPR = IPR(simData, ...%             'objectHandle', hIPR, ...
+        simScatt=centerAndCropFcn(simScatt,[513,513]);
+        hIPR = IPR(simScatt, ...%             'objectHandle', hIPR, ...
             'support0', hSimu.simData.droplet>0, ...
             'support_radius', (hSimu.simParameter.aDrop+hSimu.simParameter.bDrop)/2/6, ...
             'dropletOutline', hSimu.simParameter.ellipse, ...
             'rho0', hSimu.simData.droplet,...
-            'parentfig', hFig.main);
+            'parentfig', hFig.main,...
+            'simScene', simScene);
         hFig.main.Pointer = 'arrow';
         hIPR.figureArray.Pointer = 'arrow'; drawnow;
     end % initIPRsim
