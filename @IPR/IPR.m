@@ -27,6 +27,7 @@ classdef IPR < handle
         rho0                                                                    % start droplet density
         rati
         simScene
+        simSceneFlipped
         oneshot                                                                 % complex valued Real space reconstruction after one step
         support_dilate = false                                                  % boolian switch - dilate start Support // see support_dilateFactor, support_dilateMethod
         support_dilateFactor = 2 * ones(1, 'single')                            % factor for kernel for dlating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateMethod
@@ -34,7 +35,7 @@ classdef IPR < handle
         dropletOutline
         %% Reconstruction parameter
         reconPlan
-        errors = nan(5,1, 'single')
+        errors = nan(3,1, 'single')
         noise = (single(1.0))                                                   % noise amplitude estimation value, noise = rms(noiseMatrix) = rms(NOISEMatrix)
         noiseMatrix                                                             % noise amplitude estimation matrix in Real space
         NOISEMatrix                                                             % noise amplitude estimation matrix in Fourier space
@@ -126,7 +127,7 @@ classdef IPR < handle
         obj = reconIterate(obj, nSteps, method)
         obj = reconApplyConstraints(obj, method)         
         obj = calcError(obj)
-%         errors = calcErrors(ws,rho,support,W,AMP0,MASK)
+
         WS = projectorModulus(AMP, AMP0, PHASE, MASK)
         
         beta = updateBeta(beta0, beta, nTotal)

@@ -28,6 +28,11 @@ function obj = initPhase(obj)
     obj.rho = obj.rho0 * obj.alpha;
     obj.delta = obj.deltaFactor * obj.noise;
     
+    if ~isempty(obj.simScene)
+        obj.simScene = obj.simScene / norm(obj.simScene, 'fro') * norm(obj.amp, 'fro');
+        obj.simSceneFlipped = obj.simSceneFlipped / norm(obj.simSceneFlipped, 'fro') * norm(obj.amp, 'fro');
+    end
+    
     fprintf('\tbin factor = %.3g\n', obj.binFactor)
     fprintf('\talpha = %.3g\n', obj.alpha)
     fprintf('\tnoise = %.3g\n', obj.noise)

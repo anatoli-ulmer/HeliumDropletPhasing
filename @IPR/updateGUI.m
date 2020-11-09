@@ -1,6 +1,7 @@
 function obj = updateGUI(obj,~,~)
     
     for i=1:size(obj.errors,1)
+        obj.plt.err(i).XData = 1:numel(gather(obj.errors(i,:)));
         obj.plt.err(i).YData = gather(obj.errors(i,:));
     end
      

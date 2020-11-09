@@ -138,7 +138,7 @@ initFcn;
                 end
             case 'l',                   getFileFcn;
             case 'c'
-                clc; src.Pointer = 'arrow'; drawnow;
+                fprintf('\n\n\n\n\n\n\n\n\n\n'); src.Pointer = 'arrow'; drawnow;
             case {'1','numpad1'},       centerImgFcn;
             case {'2','numpad2'},       findShapeFcn;
             case {'w'},                 startSimulation;
@@ -148,15 +148,45 @@ initFcn;
             case {'5','numpad5'},       addToPlanDCDI;
             case {'6','numpad6'},       addToPlanNTDCDI;
             case {'7','numpad7'},       addToPlanNTHIO;
-            case {'8','numpad8'}
-            case {'9','numpad9'}       
+            case {'8','numpad8'},       addToPlanHIO;
+            case {'9','numpad9'},       addToPlanRAAR;       
             case {'return'},            runRecon;
             case {'0','numpad0'},       resetRecon;
             case 'k',                   reconANDsave;
+            case 'j'
+                %%
+                reset(gpuDevice)
+                initIPRsim;
+                addToPlanDCDI;
+                hIPR.scanParameter('alpha', (0.5:0.05:1.45), ...
+                    fullfile(hSave.folder, 'scans'));
+                initIPRsim;
+                addToPlanDCDI;
+                hIPR.scanParameter('deltaFactor', (0:1:15), ...
+                    fullfile(hSave.folder, 'scans'));
+                initIPRsim;
+                addToPlanNTDCDI;
+                hIPR.scanParameter('alpha', (0.5:0.05:1.45), ...
+                    fullfile(hSave.folder, 'scans'));
+                initIPRsim;
+                addToPlanNTDCDI;
+                hIPR.scanParameter('deltaFactor', (0:1:15), ...
+                    fullfile(hSave.folder, 'scans'));
+                initIPRsim;
+                addToPlanNTHIO;
+                hIPR.scanParameter('alpha', (0.5:0.05:1.45), ...
+                    fullfile(hSave.folder, 'scans'));
+                initIPRsim;
+                addToPlanNTHIO;
+                hIPR.scanParameter('deltaFactor', (0:1:15), ...
+                    fullfile(hSave.folder, 'scans'));
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             case 'f12'
-                hIPR.scanParameter('alpha', (0.5:0.05:1.5), hSave.folder);
+                hIPR.scanParameter('alpha', (0.5:0.05:1.45), ...
+                    fullfile(hSave.folder, 'scans'));
             case 'f11'
-                hIPR.scanParameter('deltaFactor', (0:1:11), hSave.folder);
+                hIPR.scanParameter('deltaFactor', (0:1:11), ...
+                    fullfile(hSave.folder, 'scans'));
         end
         unregisterKeys(hFig.main);
         src.Pointer = 'arrow'; drawnow;
@@ -716,6 +746,12 @@ initFcn;
     function addToPlanNTHIO(~,~)
         hIPR.reconAddToPlan('nthio',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanNTHIO
+    function addToPlanRAAR(~,~)
+        hIPR.reconAddToPlan('raar',hData.var.nSteps,hData.var.nLoops);
+    end % addToPlanRAAR
+    function addToPlanHIO(~,~)
+        hIPR.reconAddToPlan('hio',hData.var.nSteps,hData.var.nLoops);
+    end % addToPlanHIO
     function resetRecon(~,~)
         hIPR.resetIPR();
     end % resetRecon

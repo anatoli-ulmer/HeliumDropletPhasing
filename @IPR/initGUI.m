@@ -98,14 +98,32 @@ function obj = initGUI(obj)
     obj.axesArray(5) = nexttile(obj.tiledLayout,3);
     obj.axesArray(6) = nexttile(obj.tiledLayout,6);
 
-    obj.plt.err(1) = plot(obj.axesArray(1), obj.errors(1,:), '--'); 
-    grid(obj.axesArray(1), 'on'); hold(obj.axesArray(1), 'on');
-    obj.plt.err(2) = plot(obj.axesArray(1), obj.errors(2,:), ':');
-    obj.plt.err(3) = plot(obj.axesArray(2), obj.errors(3,:), '-o'); 
-    grid(obj.axesArray(2), 'on'); hold(obj.axesArray(2), 'on');
-    obj.plt.err(4) = plot(obj.axesArray(2), obj.errors(4,:), ':');
-    obj.plt.err(5) = plot(obj.axesArray(2), obj.errors(5,:), 'x');
-    legend(obj.axesArray(2), 'NRMSD', 'sqrt(I)');
+    % Real Space Error
+    obj.plt.err(1) = plot(obj.axesArray(1),...
+        1:numel(obj.errors(1,:)), obj.errors(1,:), '--');
+    hold(obj.axesArray(1), 'on');
+    obj.plt.err(2) = plot(obj.axesArray(1),...
+        1:numel(obj.errors(2,:)), obj.errors(2,:), ':'); 
+    hold(obj.axesArray(1), 'off');
+    grid(obj.axesArray(1), 'on'); 
+    legend(obj.axesArray(1), ...
+        {'$||\mathbf{\overline{P}_S}\rho_n|| / ||\mathbf{P_S} \rho_n||$',...
+        '$||\rho_n - \rho_{sim}|| / ||\rho_{sim}||$'}, 'Interpreter','latex');
+    
+    % Fourier Space Error
+    obj.plt.err(3) = plot(obj.axesArray(2), ...
+        1:numel(obj.errors(1,:)), obj.errors(1,:), '--');
+%     hold(obj.axesArray(2), 'on');
+%     obj.plt.err(4) = plot(obj.axesArray(2), ...
+%         1:numel(obj.errors(1,:)), obj.errors(1,:), '-o');
+%     obj.plt.err(5) = plot(obj.axesArray(2), ...
+%         1:numel(obj.errors(1,:)), obj.errors(1,:), '-x');
+%     hold(obj.axesArray(2), 'off');
+    grid(obj.axesArray(2), 'on'); 
+    legend(obj.axesArray(2), ...
+        {'$|| \left|\tilde{\rho}_n\right| - \sqrt{I_0}|| / || \sqrt{I_0} ||$'},...
+        'Interpreter','latex');
+    
     % create images
     anglebound = atan([obj.yy(1),obj.yy(end)]*75e-6/0.37/obj.binFactor)/2/pi*360;
     obj.plt.int(1).img = imagesc(obj.axesArray(3), (log10(abs(obj.AMP).^2)), ...
@@ -116,6 +134,7 @@ function obj = initGUI(obj)
         'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
     obj.plt.rec(2).img = imagesc(obj.axesArray(6), (real(obj.w)), ...
         'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
+    
     % plot ellipse
     if ~isempty(obj.dropletOutline)
         hold(obj.axesArray(5:6),'on');

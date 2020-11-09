@@ -4,7 +4,7 @@ function obj = configIPR(obj)
     obj.random_phase                    = false;                % use random starting phase
     
     obj.masking.constraint_RMask        = false;                % cut large angle scattering signal above rmax
-    obj.masking.constraint_wedgeMask    = false;                % cut wedges in detector slit direction (for straylight)
+    obj.masking.constraint_wedgeMask    = true;                 % cut wedges in detector slit direction (for straylight)
     obj.masking.constraint_gapMask      = false;                % cut gap slit (for straylight)
     obj.masking.dilate                  = false;                % dilate masked area (useful for straylight at detector edges)
     
@@ -24,8 +24,8 @@ function obj = configIPR(obj)
     obj.support_dilateMethod            = 'disk';
 
     %% masking parameter
-    obj.masking.minPhotons              = single(0.5);        	% low signal cutoff in photons 
-    obj.masking.maxPhotons              = single(50);        	% high signal cutoff in photons 
+    obj.masking.minPhotons              = single(0);        	% low signal cutoff in photons 
+    obj.masking.maxPhotons              = single(Inf);        	% high signal cutoff in photons 
     obj.masking.rmin                    = single(0);        	% radial mask min px cutoff
     obj.masking.rmax                    = single(512*3/4);      % IF constraint_RMask: radial mask max px cu toff
     obj.masking.RMASK_smoothPix         = single(20);       	% smoothing radial mask to avoid ringing
@@ -36,7 +36,7 @@ function obj = configIPR(obj)
     obj.beta0                           = single(0.9);          % phasing parameter; should be between 0.5 and 1.0
     obj.alpha                           = single(1);            % 0.84 in Tanyag2015
     obj.delta                           = 1-obj.alpha;          % IF constraint_shape; DCDI parameter: max deviation from calculated rho
-    obj.deltaFactor                     = 8;                    % Threshold multiplier for noise threshold
+    obj.deltaFactor                     = 10;                   % Threshold multiplier for noise threshold
     obj.phaseMin                        = single(-Inf);         % DCDI parameter: min phase value; helps convergence behaviour
     obj.mixScatt                        = single(0.1);          % IF constraint_mixscatt: share of scattering in Fourier domain
 
