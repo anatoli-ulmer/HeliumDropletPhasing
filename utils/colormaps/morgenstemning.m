@@ -28,7 +28,7 @@
 % % % %
 % % % %
 % % % %   For more detailed information, please see:
-% % % %   http://lob.epfl.ch -> Research -> Color maps
+% % % %   	
 % % % %
 % % % %
 % % % %   Usage:

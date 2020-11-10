@@ -1,5 +1,5 @@
 classdef simulatePatternApp < handle
-    %% SIMPATTERN Summary of this class goes here
+    %% SIMPATTERNAPP Summary of this class goes here
     
     %% Properties that correspond to app components
     properties (Access = public)
@@ -9,10 +9,9 @@ classdef simulatePatternApp < handle
         cBarArray = gobjects(5,1)
         imgObjArray = gobjects(7,1)
         cbxObjArray = gobjects(1,1)
-        popupObjArray = gobjects(1,1)
         editObjArray = gobjects(13,1)
         textObjArray = gobjects(12,1)
-        CallingApp
+        hCallingApp
         simData
         simParameter
     end
@@ -42,7 +41,7 @@ classdef simulatePatternApp < handle
             simParameter.center = 0.5*simParameter.nPixel+1;
             % Graphics
             simParameter.cLims = [-1,2];
-            simParameter.cMap = imorgen;
+            simParameter.cMap = ihesperia;
             simParameter.subtractionScale = 0.9;
             simParameter.YData = 6 * ( [1,simParameter.nPixel(1)] ...
                 - simParameter.center(1) );
@@ -63,7 +62,7 @@ classdef simulatePatternApp < handle
         function app = startSimulation(app,src,evt) %#ok<*INUSD>
             fprintf('\tsimulating ...\n')
             
-            app = updateParameter(app);
+            app.updateParameter();
             app.simData = dopecore_scatt(app.simData, app.simParameter);
             
             app.simData.scatt1 = app.simData.scatt1/sum(app.simData.scatt1(:) .* double(app.simData.mask(:))) * app.simParameter.nPhotonsOnDetector;
@@ -77,7 +76,7 @@ classdef simulatePatternApp < handle
                 app.simData.scatt2(~app.simData.mask) = nan;
             end
             
-            app = updatePlot(app);
+            app.updateSimPlot();
         end
         function app = updateParameter(app,src,evt)
             % Positions
@@ -136,7 +135,7 @@ classdef simulatePatternApp < handle
             % Rest
             app.editObjArray(13).String = app.simParameter.savepath;
         end
-        function app = updatePlot(app,evt)
+        function app = updateSimPlot(app,evt)
             app.imgObjArray(1).CData = app.simData.scene1 - ...
                 app.simParameter.subtractionScale*app.simData.droplet;
             app.imgObjArray(2).CData = app.simData.scene2 - ...
@@ -173,12 +172,6 @@ classdef simulatePatternApp < handle
 %             set(app.save.ax,'visible','off'); grid(app.save.ax, 'off');
 %             drawnow;
         end
-        function app = setColormapSim(app,evt)
-            app.simParameter.cMap = app.popupObjArray(1).String{app.popupObjArray(1).Value};
-            colormap(app.axesObjArray(3), app.simParameter.cMap);
-            colormap(app.axesObjArray(4), app.simParameter.cMap);
-            colormap(app.axesObjArray(5), app.simParameter.cMap);
-        end
         function argout = getSimulation(app)
             argout = app.simData.scatt1 ;
         end
@@ -188,7 +181,7 @@ classdef simulatePatternApp < handle
     methods (Access = private)
         % Code that executes after component creation
         function app = StartupFcn(app, newData, newMask, newParameter, ...
-                newSavepath, mainapp)
+                newSavepath, hCallingApp)
             if exist('newData','var')
                 app.simData.dataCropped = newData;
             else
@@ -205,15 +198,16 @@ classdef simulatePatternApp < handle
             if exist('newSavepath','var')
                 app.simParameter.savepath = newSavepath;
             end
-            if exist('mainapp','var')
+            if exist('hCallingApp','var')
                 % Store main app in property for CloseRequestFcn to use
-                app.CallingApp = mainapp;
+                app.hCallingApp = hCallingApp;
             end
             
             app.simData.dataCropped(~app.simData.mask) = nan;
             app.updateEditFields();
             app.startSimulation();
             app.simParameter.isValidApp = true;
+            app.hCallingApp.UserData.isValidSimulation = true;
         end
         function app = thisKeyReleaseFcn(app,~,evt)
             switch evt.Key
@@ -227,6 +221,7 @@ classdef simulatePatternApp < handle
         end
         function thisCloseRequestFcn(app,src,evt)
             app.simParameter.isValidApp = false;
+            app.hCallingApp.UserData.isValidSimulation = false;
             % Delete the dialog box
             delete(app)
         end
@@ -296,17 +291,11 @@ classdef simulatePatternApp < handle
                 app.axesObjArray(5)], 'xy')
             %             app.axesObjArray(1).Toolbar.Visible = false;
             
-            app.axesObjArray(1).Colormap = r2b;
-            app.axesObjArray(2).Colormap = r2b;
+            app.axesObjArray(1).Colormap = ibentcoolwarm;%r2b;
+            app.axesObjArray(2).Colormap = ibentcoolwarm;%r2b;
             app.axesObjArray(3).Colormap = app.simParameter.cMap;
             app.axesObjArray(4).Colormap = app.simParameter.cMap;
             app.axesObjArray(5).Colormap = app.simParameter.cMap;
-            
-            app.popupObjArray(1) = uicontrol('parent', app.figObj,'Style',...
-                'popup','String',{'imorgen', 'morgenstemning', 'wjet','r2b',...
-                'parula','jet','hsv','hot','cool','gray','igray'},'Units',...
-                'normalized', 'Position', [.575,.94,.1,.05], 'Callback',...
-                @app.setColormapSim, 'Value', 1);
             
             app.editObjArray(1) = uicontrol(app.figObj, 'Style', 'edit', ...
                 'Units', 'normalized', 'Position', [.45 .85 .04 .04], ...
@@ -386,6 +375,7 @@ classdef simulatePatternApp < handle
                 'String', '# photons on detector', 'Units', 'normalized', ...
                 'Position', [.4 .5 .09 .04], 'Callback', @app.startSimulation);
             
+            drawnow;
             app.updateEditFields();
             app.figObj.Visible = 'on';
         end
@@ -399,7 +389,7 @@ classdef simulatePatternApp < handle
             app.simParameter = app.initParameter();
             
             % Create figObj and components
-            createComponents(app);
+            app.createComponents();
             
             % Execute the startup function
             StartupFcn(app, varargin{:});

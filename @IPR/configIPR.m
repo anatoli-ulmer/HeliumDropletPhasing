@@ -5,7 +5,7 @@ function obj = configIPR(obj)
     
     obj.masking.constraint_RMask        = false;                % cut large angle scattering signal above rmax
     obj.masking.constraint_wedgeMask    = true;                 % cut wedges in detector slit direction (for straylight)
-    obj.masking.constraint_gapMask      = false;                % cut gap slit (for straylight)
+    obj.masking.constraint_gapMask      = true;                % cut gap slit (for straylight)
     obj.masking.dilate                  = false;                % dilate masked area (useful for straylight at detector edges)
     
     obj.constraint_real                 = false;                % rho is real
@@ -24,7 +24,7 @@ function obj = configIPR(obj)
     obj.support_dilateMethod            = 'disk';
 
     %% masking parameter
-    obj.masking.minPhotons              = single(0);        	% low signal cutoff in photons 
+    obj.masking.minPhotons              = single(0.5);        	% low signal cutoff in photons 
     obj.masking.maxPhotons              = single(Inf);        	% high signal cutoff in photons 
     obj.masking.rmin                    = single(0);        	% radial mask min px cutoff
     obj.masking.rmax                    = single(512*3/4);      % IF constraint_RMask: radial mask max px cu toff
@@ -36,19 +36,19 @@ function obj = configIPR(obj)
     obj.beta0                           = single(0.9);          % phasing parameter; should be between 0.5 and 1.0
     obj.alpha                           = single(1);            % 0.84 in Tanyag2015
     obj.delta                           = 1-obj.alpha;          % IF constraint_shape; DCDI parameter: max deviation from calculated rho
-    obj.deltaFactor                     = 10;                   % Threshold multiplier for noise threshold
+    obj.deltaFactor                     = 20;                   % Threshold multiplier for noise threshold
     obj.phaseMin                        = single(-Inf);         % DCDI parameter: min phase value; helps convergence behaviour
     obj.mixScatt                        = single(0.1);          % IF constraint_mixscatt: share of scattering in Fourier domain
 
     %% plot parameter
     obj.nStepsUpdatePlot                = Inf;
-    obj.int_cm                          = 'imorgen';            % colormap index for Fourier domain (dropdown menu)
-    obj.rec_cm                          = 'wjet';               % colormap for Real domain (dropdown menu)
-    obj.clims_scatt                     = [-1,3];               % colormap limits for Fourier domain (log10 scale!)
-    obj.reconrange                      = 2;                    % range index for color map scaling (dropdown menu)
+    obj.int_cm                          = 'ihesperia';            % colormap index for Fourier domain (dropdown menu)
+    obj.rec_cm                          = 'b2r';               % colormap for Real domain (dropdown menu)
+    obj.clims_scatt                     = [log10(0.5),3];               % colormap limits for Fourier domain (log10 scale!)
+    obj.reconrange                      = 3;                    % range index for color map scaling (dropdown menu)
     obj.intpart                         = 1;
-    obj.reconpart                       = 'abs';                % 'real' | 'imag' | 'abs' | 'angle' -  filter for Real space image
+    obj.reconpart                       = 'imag';                % 'real' | 'imag' | 'abs' | 'angle' -  filter for Real space image
     obj.normalize_shape                 = false;
-    obj.substract_shape                 = true;                 % subtract calculated shape before plotting
+    obj.substract_shape                 = false;                 % subtract calculated shape before plotting
     obj.subscale                        = 1;                    % scale calculated shape before subtraction
 end

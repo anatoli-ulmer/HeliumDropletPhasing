@@ -5,7 +5,7 @@ fprintf('\n\n\n\n\nStarting pnCCD GUI _/^\\_/^\\_\n\t\t\t... please be patient .
 db = loadDatabases(paths);
 
 %% Figure creation & initialization of grapical objects
-hFig.main = findobj('Type','Figure','Name','pnccdGUI');
+hFig.main = findobj('Type','Figure','Name','ASR - main Window');
 if isgraphics(hFig.main)
     clf(hFig.main);
 else
@@ -47,7 +47,7 @@ hData.par.nPixelFull = [1100,1050];
 hData.par.nPixel = [1024, 1024];
 hData.par.datatype = 'single';
 hData.par.cLims = [0.1, 100];
-hData.par.cMap = imorgen;
+hData.par.cMap = ihesperia;
 hData.par.nRings = 15;
 hData.par.ringwidth = 1;
 hData.par.nSimCores = 1;
@@ -242,6 +242,7 @@ initFcn;
     function createGUI(~,~)
         hFig.main.Visible = 'off';
         hFig.main.Name = 'ASR - main Window';
+        hFig.main.Tag = 'asrMainWindow';
         % for performance reasons:
         hFig.main.GraphicsSmoothing=false;
         hFig.main.NumberTitle='off';
@@ -253,6 +254,7 @@ initFcn;
         hFig.main.UserData.isRegisteredAlt = false;
         hFig.main.UserData.isRegisteredControl = false;
         hFig.main.UserData.isRegisteredShift = false;
+        hFig.main.UserData.isValidSimulation = false;
         
         hAx.pnccd = axes('OuterPosition', [.0 .0 .55 .95]);
         hAx.pnccd.Tag = 'pnccd';
@@ -297,7 +299,7 @@ initFcn;
         hFig.main_uicontrols.ringWidth_txt = uicontrol(hFig.main, 'Style', 'text', 'String', 'ring width',...
             'Units', 'normalized', 'Position', [.57 .6 .06 .04],...
             'Backgroundcolor', hFig.main.Color);
-        hFig.main_uicontrols.cMap_edt = uicontrol(hFig.main, 'Style', 'edit', 'String', 'imorgen',...
+        hFig.main_uicontrols.cMap_edt = uicontrol(hFig.main, 'Style', 'edit', 'String', 'ihesperia',...
             'Units', 'normalized', 'Position', [.53 .49 .06 .04],...
             'Backgroundcolor', hFig.main.Color, 'Callback', @setCMap);
         hFig.main_uicontrols.cMap_txt = uicontrol(hFig.main, 'Style', 'text', 'String', 'colormap',...
@@ -710,6 +712,18 @@ initFcn;
         %         figure(hFig.main)
     end % initIPR
     function initIPRsim(~,~)
+        if ~hFig.main.UserData.isValidSimulation
+            dialogAnswer = questdlg('No valid simulation window found. Would you like to start a simulation?', ...
+                'No simulation window detected.', ...
+                'Yes','Cancel','Yes');
+            % Handle response
+            switch dialogAnswer
+                case 'Yes'
+                    startSimulation();
+                case 'Cancel'
+                    return;
+            end
+        end
         hFig.main.Pointer = 'watch'; drawnow limitrate;
         if isempty(hData)
             error(['No simulation data available. ',...
@@ -768,6 +782,7 @@ initFcn;
             fullfile(paths.img, 'scattering_simulations'), ...
             hFig.main);
         fprintf('\tSimulation started!\n')
+        drawnow;
     end % startSimulation
     function setNSimCores(~,~)
         hData.par.nSimCores = hFig.main_uicontrols.oneCore_tb.Value;
@@ -779,10 +794,10 @@ initFcn;
         dbShape=db.shape;
         dbRunInfo=db.runInfo;
        save(fullfile(paths.db,'\db.mat'),'db','-v7.3')
-       save(fullfile(paths.db,' \db-center.mat'),'dbCenter','-v7.3')
-       save(fullfile(paths.db, '\db-run-info.mat'),'dbRunInfo','-v7.3')
-       save(fullfile(paths.db, '\db-shape.mat'),'dbShape','-v7.3')
-       save(fullfile(paths.db, '\db-sizing.mat'),'dbSizing','-v7.3')
+       save(fullfile(paths.db,' \db_center.mat'),'dbCenter','-v7.3')
+       save(fullfile(paths.db, '\db_run-info.mat'),'dbRunInfo','-v7.3')
+       save(fullfile(paths.db, '\db_shape.mat'),'dbShape','-v7.3')
+       save(fullfile(paths.db, '\db_sizing.mat'),'dbSizing','-v7.3')
     end
     function saveImgFcn(~,~)
         saveName = getSaveName;
