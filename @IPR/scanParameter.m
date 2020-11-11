@@ -1,104 +1,130 @@
 function obj = scanParameter(obj, sVar, sArray, savePath)
+
     fprintf('starting scan for %s=[%.3g',sVar,sArray(1))
     arrayfun(@(a)fprintf(',%.3g',a),gather(sArray(2:end)))
     fprintf(']\n')
+    
     %% copy existing scanObj
     scanObj = obj.scanObj;
+    
     %% make sure that output folder exists
     if ~exist(savePath, 'dir')
         mkdir(savePath);
     end
+    
     %% prepare figure objects
-    gObj.hFigF = figure(12520);
-    gObj.hFigR = figure(12521);
-    gObj.hTLF = tiledlayout(gObj.hFigF, 'flow');
-    gObj.hTLR = tiledlayout(gObj.hFigR, 'flow');
+    gObj.hFigArray = gobjects(1,3);
+    gObj.hFigArray(1) = getFigure(gObj.hFigArray(1),...
+        'NumberTitle', 'off', 'Name', 'Parameter Scan Figure #1 - Fourier Space');
+    gObj.hFigArray(2) = getFigure(gObj.hFigArray(2),...
+        'NumberTitle', 'off', 'Name', 'Parameter Scan Figure #2 - Real Space');
+    gObj.hFigArray(3) = getFigure(gObj.hFigArray(3),...
+        'NumberTitle', 'off', 'Name', 'Parameter Scan Figure #3 - Error Plots');
+    
+    set(gObj.hFigArray(1), 'Units', 'normalized', 'Position', [0,0.033,0.7,0.9067]);
+    set(gObj.hFigArray(2), 'Units', 'normalized', 'Position', [0,0.033,0.7,0.9067]);
+    set(gObj.hFigArray(3), 'Units', 'normalized', 'Position', [0.7,0.033,0.3,0.9067]);
+    
+    gObj.hTLArray(1) = tiledlayout(gObj.hFigArray(1), 'flow', ...
+        'TileSpacing', 'none', 'Padding', 'none');
+    gObj.hTLArray(2) = tiledlayout(gObj.hFigArray(2), 'flow',...
+        'TileSpacing', 'none', 'Padding', 'none');
+    gObj.hTLArray(3) = tiledlayout(gObj.hFigArray(3), 3, 1);
+    
+    colormap(gObj.hFigArray(2), b2r);
+    gObj.xyData = [obj.yy(1),obj.yy(end)]*6;
+    gObj.xyLims = obj.axesArray(6).XLim;
+    gObj.yLabels = {obj.axesArray(1).Legend.String{1}, ...
+        obj.axesArray(1).Legend.String{2}, ...
+        obj.axesArray(2).Legend.String{1}};
+    gObj.yLims = {[0,0.05], [0,0.2], [0,0.5]};
+    gObj.ax(1) = nexttile(gObj.hTLArray(3));
+    gObj.ax(2) = nexttile(gObj.hTLArray(3));
+    gObj.ax(3) = nexttile(gObj.hTLArray(3));
+    
     %% run the reconstructions
     nPoints = numel(sArray);
     thisReconPlan = obj.reconPlan;
+    
     for i=1:nPoints
+        
         %% set parameter
-%         obj=initIPR(obj,[],sVar,sArray(i));
         obj=resetIPR(obj,sVar,sArray(i));
-%         obj.(sVar) =sArray(i);
-%         fprintf('\t%s = %.3g\n', sVar, sArray(i))
+        
         %% run reconstruction
-%         obj.iterate(nSteps, method);
         obj.reconPlan=thisReconPlan;
         obj.reconRunPlan();
+        
         %% copy parameter and results
         scanData(i).errors = obj.errors; %#ok<*AGROW>
-        scanData(i).realSpaceError = obj.errors(1,end-1);
-        scanData(i).simError = obj.errors(2,end-1);
-        scanData(i).fourierSpaceError = obj.errors(3,end-1);
+        % last entry of real space error:
+        scanData(i).errorReal = obj.errors(1,end-1); 
+        % last entry of real space deviation of reconstruction from simulation 
+        % input:
+        scanData(i).errorSim = obj.errors(2,end-1);
+        % last entry of fourier space error:
+        scanData(i).errorFourier = obj.errors(3,end-1);
         scanData(i).alpha = obj.alpha;
         scanData(i).delta = obj.delta;
         scanData(i).deltaFactor = obj.deltaFactor;
         scanData(i).w = obj.w;
-        scanData(i).WS = obj.WS;
+        scanData(i).W = obj.W;
         scanData(i).reconPlan = thisReconPlan;
+        
         %% plot images in array
-        fData=log10(abs(obj.WS));
+        fData=log10(abs(obj.W));
         fPlotRange=obj.clims_scatt;
         rData=real(obj.w - obj.rho0);
         rPlotRange=[-1,1]*max(abs(rData(:)));
-        gObj.hAxArrayF(i)=nexttile(gObj.hTLF);
-        gObj.hAxArrayR(i)=nexttile(gObj.hTLR);
+        gObj.hAxArrayF(i)=nexttile(gObj.hTLArray(1));
+        gObj.hAxArrayR(i)=nexttile(gObj.hTLArray(2));
+        
         gObj.hImgArrayF(i)=imagesc(gObj.hAxArrayF(i),fData,fPlotRange);
-        gObj.hImgArrayR(i)=imagesc(gObj.hAxArrayR(i),rData,rPlotRange);
+        gObj.hImgArrayR(i)=imagesc(gObj.hAxArrayR(i),gObj.xyData,gObj.xyData,...
+            rData,rPlotRange);
+        hold(gObj.hAxArrayR(i), 'on');
+        gObj.outline(i)=plot(gObj.hAxArrayR(i), ...
+            obj.dropletOutline.x, obj.dropletOutline.y, 'k--');
+        hold(gObj.hAxArrayR(i), 'off');
+        
         gObj.hTitArrayF(i)=title(gObj.hAxArrayF(i),...
             sprintf('%s=%.2f',sVar,sArray(i)));
         gObj.hTitArrayR(i)=title(gObj.hAxArrayR(i),...
             sprintf('%s=%.2f',sVar,sArray(i)));
-%         gObj.hAxArrayR(i).XLim=[-1,1]*250;
-%         gObj.hAxArrayR(i).YLim=[-1,1]*250;
-        zoom(gObj.hAxArrayR(i),5);
-        colormap(gObj.hAxArrayR(i), b2r);
-        drawnow;
-        %% save images directly
-%         myImwrite(log10(abs(obj.WS)), imorgen, [-1,3], ...
-%             fullfile(savePath, sprintf('%s%02.3f-1.png', ...
-%             sVar, sArray(i))));
-%         myImwrite((real(obj.w)-obj.rho0), igray, [], ...
-%             fullfile(savePath, sprintf('%s%02.3f-2.png', ...
-%             sVar, sArray(i))));        
+        set(gObj.hAxArrayF(i),'XTickLabel',[],'YTickLabel',[]);
+        set(gObj.hAxArrayR(i),'XTickLabel',[],'YTickLabel',[],...
+            'XLim',gObj.xyLims,'YLim',gObj.xyLims);
+        drawnow;     
     end
+    
     %% plot results for error metrics
-    gObj.fig = figure(12523);
-    gObj.tl = tiledlayout(gObj.fig, 3, 1);
-    gObj.ax(1) = nexttile(gObj.tl);
-    gObj.ax(2) = nexttile(gObj.tl);
-    gObj.ax(3) = nexttile(gObj.tl);
-    gObj.plt(1) = semilogy(gObj.ax(1), ...
+
+    gObj.plt(1) = plot(gObj.ax(1), ...
         [scanData(:).(sVar)], ...
-        [scanData(:).realSpaceError], 'o--');
+        [scanData(:).errorReal], 'o--');
 %     hold(gObj.ax(1), 'on');
-    gObj.plt(2) = semilogy(gObj.ax(2), ...
+    gObj.plt(2) = plot(gObj.ax(2), ...
         [scanData(:).(sVar)], ...
-        [scanData(:).simError], 'o:');
+        [scanData(:).errorSim], 'o:', 'Color', colorOrder(2));
 %     hold(gObj.ax(1), 'off');
-    gObj.plt(3) = semilogy(gObj.ax(3), ...
+    gObj.plt(3) = plot(gObj.ax(3), ...
         [scanData(:).(sVar)], ...
-        [scanData(:).fourierSpaceError], 'x--');
-%     legend(gObj.ax(1), obj.axesArray(1).Legend.String{1}, 'Interpreter', 'latex');
-%     legend(gObj.ax(2), obj.axesArray(1).Legend.String{2}, 'Interpreter', 'latex');
-%     legend(gObj.ax(3), obj.axesArray(2).Legend.String, 'Interpreter', 'latex');
-    gObj.ax(1).XLabel.String = sVar;
-    gObj.ax(2).XLabel.String = sVar;
-    gObj.ax(3).XLabel.String = sVar;
+        [scanData(:).errorFourier], 'x--', 'Color', colorOrder(3));
+%     arrayfun(@(a) legend(gObj.ax(a), gObj.yLabels{a}, 'Interpreter', ...
+%         'latex'), 1:3, 'UniformOutput', false);
+
+    arrayfun(@(a) xlabel(gObj.ax(a), sVar), 1:3, ...
+        'UniformOutput', false);
+    arrayfun(@(a) ylabel(gObj.ax(a), gObj.yLabels{a}, ...
+        'Interpreter', 'latex'), 1:3, 'UniformOutput', false);
     ylabel(gObj.ax(1), obj.axesArray(1).Legend.String{1}, 'Interpreter', 'latex');
-    ylabel(gObj.ax(2), obj.axesArray(1).Legend.String{2}, 'Interpreter', 'latex');
-    ylabel(gObj.ax(3), obj.axesArray(2).Legend.String{1}, 'Interpreter', 'latex');
-    axis(gObj.ax, 'tight');
-%     gObj.ax(1).XLim = [min(gObj.plt(1).XData), max(gObj.plt(1).XData)];
-%     gObj.ax(2).XLim = [min(gObj.plt(2).XData), max(gObj.plt(2).XData)];
-%     gObj.ax(3).XLim = [min(gObj.plt(3).XData), max(gObj.plt(3).XData)];
-%     gObj.ax(1).YLim = [min(gObj.plt(1).YData),max(gObj.plt(1).YData)].*[0.9, 1.1];
-%     gObj.ax(2).YLim = [min(gObj.plt(2).YData),max(gObj.plt(2).YData)].*[0.9, 1.1];
-%     gObj.ax(3).YLim = [min(gObj.plt(3).YData),max(gObj.plt(3).YData)].*[0.9, 1.1];
-%     gObj.ax(2).YLabel.String = obj.axesArray(1).Legend.String{2};
-%     gObj.ax(3).YLabel.String = obj.axesArray(2).Legend.String;
-%     gObj.leg = legend(gObj.ax, 'Real Space Error', 'Fourier Space Error');
+
+%     axis(gObj.ax, 'tight');
+    arrayfun(@(a) set(gObj.ax(a), ...
+        'XLim', [min(gObj.plt(1).XData), max(gObj.plt(1).XData)], ...
+        'YLim', [gObj.yLims{a}(1), max([gObj.yLims{a}(2), gObj.plt(a).YData])]), ...
+        1:3, 'UniformOutput', false);
+
     %% copy results into scanObj
     scanObj.scanVariable = sVar;
     scanObj.scanArray = sArray;
@@ -108,13 +134,14 @@ function obj = scanParameter(obj, sVar, sArray, savePath)
     scanObj.gObj = gObj;
     %% saving
     saveTime = string(datetime('now','TimeZone','local',...
-        'Format','dd-MM-yyyy_HH-mm-ss'));
+        'Format','yyyy-MM-dd-_HH.mm'));
     saveName = sprintf('%s-scan_%s_%s', sVar, thisReconPlan{1}, saveTime);
     save(fullfile(savePath, ['Obj_', saveName, '.mat']), 'scanObj');
-    exportgraphics(gObj.hFigF, fullfile(savePath, ['scattering_', saveName, '.png']))
-    exportgraphics(gObj.hFigR, fullfile(savePath, ['reconstruction_', saveName, '.png']))
-    exportgraphics(gObj.fig, fullfile(savePath, ['errors_', saveName, '.png']))
-    dlmwrite(fullfile(savePath, ['data_',saveName, '.csv']), [[scanData(:).(sVar)]; [scanData(:).simError]]);
+    exportgraphics(gObj.hFigArray(1), fullfile(savePath, ['scattering_', saveName, '.png']))
+    exportgraphics(gObj.hFigArray(2), fullfile(savePath, ['reconstruction_', saveName, '.png']))
+    exportgraphics(gObj.hFigArray(3), fullfile(savePath, ['errors_', saveName, '.png']))
+    exportgraphics(gObj.ax(2), fullfile(savePath, ['sim_error_', saveName, '.png']))
+    dlmwrite(fullfile(savePath, ['data_',saveName, '.csv']), [[scanData(:).(sVar)]; [scanData(:).errorSim]]);
     %% copy scanObj for return
     obj.scanObj = scanObj;
 end

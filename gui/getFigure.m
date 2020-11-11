@@ -6,7 +6,6 @@ function hFig = getFigure(hFig, varargin)
         hFig = findobj('Type','Figure',varargin{:});
         if isempty(hFig)
             hFig = figure;
-            hFig.NumberTitle='off';
             % overwrite data by variable input arguments
             for i=1:2:numel(varargin)
                 hFig.(varargin{i})=varargin{i+1};

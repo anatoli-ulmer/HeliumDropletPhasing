@@ -2,6 +2,7 @@ classdef IPR < handle
     properties
         %% General
         gpuAvailable                                                            % number of available gpu devices
+        
         %% Fourier space variables
         pnCCDimg
         SCATT                                                                   % Scattering pattern
@@ -16,6 +17,7 @@ classdef IPR < handle
         W                                                                       % current complex valued reconstruction after applying Fourier space constraints
         WS                                                                      % current complex valued reconstruction before applying Fourier space constraints
         ONESHOT                                                                 % complex valued Fourier space reconstruction after one step
+        
         %% Real space variables
         amp                                                                     % current Real space amplitude
         phase                                                                   % current Real space phase
@@ -33,8 +35,10 @@ classdef IPR < handle
         support_dilateFactor = 2 * ones(1, 'single')                            % factor for kernel for dlating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateMethod
         support_dilateMethod = 'disk';                                          % kernel method for dilating the start Support, applied if (support_dilate == true) // see support_dilate, support_dilateFactor
         dropletOutline
+        
         %% Reconstruction parameter
         reconPlan
+        constraints
         errors = nan(3,1, 'single')
         noise = (single(1.0))                                                   % noise amplitude estimation value, noise = rms(noiseMatrix) = rms(NOISEMatrix)
         noiseMatrix                                                             % noise amplitude estimation matrix in Real space
@@ -51,7 +55,7 @@ classdef IPR < handle
         phaseMin = -Inf * ones(1, 'single')
         mixScatt = false
         masking
-        doERstep = false
+        
         %% image properties
         center = nan(1,2, 'single');
         imgsize = ones(1,2, 'single');
@@ -63,27 +67,18 @@ classdef IPR < handle
         clims_recon = nan(1,2);
         substract_shape = false;
         normalize_shape = false;
-        constraint_real = false;
-        constraint_posImag = false;
-        constraint_pos = false;
-        constraint_shape = false;
-        constraint_symmetry = false;
-        constraint_mixScatt = false;
-        constraint_RMask = false;
-        constraint_wedgeMask = false;
-        constraint_gapMask = false;
-        RMASK_smoothPix = single(10.0);
         reconpart char = 'real';
         intpart = uint8(1);
         reconrange = uint8(1);
         rec_cm char = 'wjet';                                                   % colormap for Real space axes
         int_cm char = 'imorgen';                                                % colormap for Fourier space axes
         subscale = 1.0;                                                         % factor for droplet density subtraction before plotting (applied for plotting only!)
-        nStepsUpdatePlot = uint32(100);                                          % update plots after how many steps
+        nStepsUpdatePlot = uint32(100);                                         % update plots after how many steps
+        
         %% plot object
         parentfig = gobjects(1,1)                                               % handle for parent figure
         figureArray = gobjects(1,1)                                             % handle for IPR main figure
-        tiledLayout = gobjects(1,1)                                             % handle fpr IPR main figure tiledlayout
+%         tiledLayout = gobjects(1,1)                                             % handle fpr IPR main figure tiledlayout
         axesArray = gobjects(6,1)                                               % handle for IPR main figure axes
         plt                                                                     % handle for IPR main figure plots
         popupArray = gobjects(6,1)                                              % handle for IPR main figure popup uicontrols
@@ -135,7 +130,7 @@ classdef IPR < handle
         
         data = getReconstructionPart(data, part)                                % Get part of Real space reconstruction, chosen by dropdown menu.
         
-        obj = setColormaps(obj,~,~)                                             % Setter for colormaps
+        obj = setIPRColormaps(obj,~,~)                                             % Setter for colormaps
         obj = setScaleErrorPlot(obj,src,~)                                      % Setter for colorbar limits of Real space plots, chosen by dropdown menu.
         obj = setImageParts(obj,~,~)                                             % Setter for real/imag/abs/angle part of Real space plots, chosen by dropdown menu.
         obj = setSubtractionScale(obj,~,~)

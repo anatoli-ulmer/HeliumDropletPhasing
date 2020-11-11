@@ -12,7 +12,10 @@ function obj = updateGUI(obj,~,~)
 
     obj.plt.int(1).img.CData = gather(getScatteringPart(obj.W, obj.intpart));
     obj.plt.int(2).img.CData = gather(getScatteringPart(obj.WS, obj.intpart));
-
+    
+    if ~obj.masking.fillMask
+        obj.plt.int(2).img.CData(~obj.MASK) = nan;
+    end
     if obj.normalize_shape
         obj.plt.rec(1).img.CData = gather(getReconstructionPart(obj.ws./obj.rho, obj.reconpart));
         obj.plt.rec(2).img.CData = gather(getReconstructionPart(obj.w./obj.rho, obj.reconpart));

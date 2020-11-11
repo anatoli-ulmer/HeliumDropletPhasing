@@ -1,18 +1,15 @@
 function obj = initGUI(obj)
     %% figure
     obj.figureArray(1) = getFigure(obj.figureArray(1), ...
+        'NumberTitle', 'off', ...
         'Name', 'Iterative Phasing GUI', ...
         'Tag', 'figure_IPR', ...
         'GraphicsSmoothing', 'off', ...
         'KeyPressFcn', obj.parentfig.KeyPressFcn, ...
         'KeyReleaseFcn', obj.parentfig.KeyReleaseFcn);
-    obj.figureArray(1).Visible = 'off';
+%     obj.figureArray(1).Visible = 'on';
     %% popups
-    cMaps={'ihesperia','hesperia','ibentcoolwarm','bentcoolwarm','imorgen',...
-        'morgenstemning','wjet',...
-        'r2b','r2b2','parula','jet','hsv','hot','cool','gray',...
-        'igray','redmap','redmap2','bluemap','bluemap2','b2r','b2r2',...
-        'hslcolormap'};
+    cMaps=const.colormaps;
     obj.popupArray(1)=uicontrol('parent',obj.figureArray(1),'Style','popup');
     obj.popupArray(1).String=cMaps;
     obj.popupArray(1).Value=find(strcmp(obj.popupArray(1).String,obj.int_cm));
@@ -90,19 +87,23 @@ function obj = initGUI(obj)
     obj.editArray(3).Units='normalized';
     obj.editArray(3).Position=[.92,.82,.025,.025];
     obj.editArray(3).Callback = @obj.setSubtractionScale;
+    
     %% axes & plots
-    obj.tiledLayout = tiledlayout(obj.figureArray(1), 2,3);
-    obj.axesArray(1) = nexttile(obj.tiledLayout,1);
-    obj.axesArray(2) = nexttile(obj.tiledLayout,4);
-    obj.axesArray(3) = nexttile(obj.tiledLayout,2);
-    obj.axesArray(4) = nexttile(obj.tiledLayout,5);
-    obj.axesArray(5) = nexttile(obj.tiledLayout,3);
-    obj.axesArray(6) = nexttile(obj.tiledLayout,6);
 
-    % Real Space Error
+%     obj.tiledLayout = tiledlayout(obj.figureArray(1), 2,3);
+%     obj.axesArray(1) = nexttile(obj.tiledLayout,1);
+%     obj.axesArray(2) = nexttile(obj.tiledLayout,4);
+%     obj.axesArray(3) = nexttile(obj.tiledLayout,2);
+%     obj.axesArray(4) = nexttile(obj.tiledLayout,5);
+%     obj.axesArray(5) = nexttile(obj.tiledLayout,3);
+%     obj.axesArray(6) = nexttile(obj.tiledLayout,6);
+
+    %% Real Space Error
+    obj.axesArray(1) = subplot(2,3,1,'Parent',obj.figureArray);
     obj.plt.err(1) = plot(obj.axesArray(1),...
         1:numel(obj.errors(1,:)), obj.errors(1,:), '--');
     hold(obj.axesArray(1), 'on');
+    
     obj.plt.err(2) = plot(obj.axesArray(1),...
         1:numel(obj.errors(2,:)), obj.errors(2,:), ':'); 
     hold(obj.axesArray(1), 'off');
@@ -111,7 +112,8 @@ function obj = initGUI(obj)
         {'$||\mathbf{\overline{P}_S}\rho_n|| / ||\mathbf{P_S} \rho_n||$',...
         '$||\rho_n - \rho_{sim}|| / ||\rho_{sim}||$'}, 'Interpreter','latex');
     
-    % Fourier Space Error
+    %% Fourier Space Error
+    obj.axesArray(2) = subplot(2,3,4,'Parent',obj.figureArray);
     obj.plt.err(3) = plot(obj.axesArray(2), ...
         1:numel(obj.errors(1,:)), obj.errors(1,:), '--');
 %     hold(obj.axesArray(2), 'on');
@@ -125,18 +127,30 @@ function obj = initGUI(obj)
         {'$|| \left|\tilde{\rho}_n\right| - \sqrt{I_0}|| / || \sqrt{I_0} ||$'},...
         'Interpreter','latex');
     
-    % create images
+    %% create images
+    obj.axesArray(3) = subplot(2,3,2,'Parent',obj.figureArray);
     anglebound = atan([obj.yy(1),obj.yy(end)]*75e-6/0.37/obj.binFactor)/2/pi*360;
     obj.plt.int(1).img = imagesc(obj.axesArray(3), (log10(abs(obj.AMP).^2)), ...
         'XData', anglebound,'YData', anglebound);
+    colorbar(obj.axesArray(3));
+    
+    obj.axesArray(4) = subplot(2,3,5,'Parent',obj.figureArray);
     obj.plt.int(2).img = imagesc(obj.axesArray(4), (log10(abs(obj.W).^2)), ...
         'XData', anglebound,'YData', anglebound);
+    colorbar(obj.axesArray(4));
+    
+    obj.axesArray(5) = subplot(2,3,3,'Parent',obj.figureArray);
     obj.plt.rec(1).img = imagesc(obj.axesArray(5), (real(obj.ws)),...
         'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
+    colorbar(obj.axesArray(5));
+    
+    obj.axesArray(6) = subplot(2,3,6,'Parent',obj.figureArray);
     obj.plt.rec(2).img = imagesc(obj.axesArray(6), (real(obj.w)), ...
         'XData', [obj.xx(1),obj.xx(end)]*6,'YData', [obj.yy(1),obj.yy(end)]*6);
+    colorbar(obj.axesArray(6));
+    drawnow;
     
-    % plot ellipse
+    %% plot ellipse
     if ~isempty(obj.dropletOutline)
         hold(obj.axesArray(5:6),'on');
         obj.plt.rec(1).ell = plot(obj.axesArray(5),obj.dropletOutline.x,...
@@ -170,6 +184,8 @@ function obj = initGUI(obj)
     obj.axesArray(6).YLim = vf;
 
     obj.setPlotRange();
-    obj.setColormaps();
-    obj.figureArray(1).Visible = 'on';
+    obj.setIPRColormaps();
+    drawnow;
+%     arrayfun(@(a) colorbar(obj.axesArray(a)),3:6);
+%     obj.figureArray(1).Visible = 'on';    
 end

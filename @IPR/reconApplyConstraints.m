@@ -1,12 +1,12 @@
 function obj = reconApplyConstraints(obj, method)
 
-    if obj.constraint_real
+    if obj.constraints.real
         obj.ws = real(obj.ws); 
     end
-    if obj.constraint_pos 
+    if obj.constraints.posReal 
         obj.support = obj.support .* (real(obj.ws)>=0); 
     end
-    if obj.constraint_shape
+    if obj.constraints.shape
         obj.support = obj.support .* ( real(obj.ws) > obj.rho + obj.delta ); 
     end
 %     renormalize normalize on droplet density

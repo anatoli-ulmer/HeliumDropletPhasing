@@ -4,7 +4,7 @@ classdef simulatePatternApp < handle
     %% Properties that correspond to app components
     properties (Access = public)
         figObj = gobjects(1,1)
-        tlObj = gobjects(1,1)
+%         tlObj = gobjects(1,1)
         axesObjArray = gobjects(5,1)
         cBarArray = gobjects(5,1)
         imgObjArray = gobjects(7,1)
@@ -31,7 +31,7 @@ classdef simulatePatternApp < handle
             simParameter.y2 = 108;
             % Scattering
             simParameter.ratio = 7;
-            simParameter.nPhotonsOnDetector = 1e7;
+            simParameter.nPhotonsOnDetector = 1e5;
             simParameter.nDroplet = ((simParameter.aDrop+simParameter.bDrop)...
                 /2/0.222)^3;
             simParameter.nDopants = ((simParameter.aCore+simParameter.bCore)...
@@ -58,15 +58,21 @@ classdef simulatePatternApp < handle
         end
     end
     
-    methods (Access = private)
+    methods (Access = public)
         function app = startSimulation(app,src,evt) %#ok<*INUSD>
             fprintf('\tsimulating ...\n')
             
             app.updateParameter();
             app.simData = dopecore_scatt(app.simData, app.simParameter);
             
-            app.simData.scatt1 = app.simData.scatt1/sum(app.simData.scatt1(:) .* double(app.simData.mask(:))) * app.simParameter.nPhotonsOnDetector;
-            app.simData.scatt2 = app.simData.scatt2/sum(app.simData.scatt2(:) .* double(app.simData.mask(:))) * app.simParameter.nPhotonsOnDetector;
+            app.simData.scatt1 = app.simData.scatt1 ...
+                /sum(app.simData.scatt1(:) ...
+                .* double(app.simData.mask(:))) ...
+                * app.simParameter.nPhotonsOnDetector;
+            app.simData.scatt2 = app.simData.scatt2 ...
+                /sum(app.simData.scatt2(:) ...
+                .* double(app.simData.mask(:))) ...
+                * app.simParameter.nPhotonsOnDetector;
             
             app.simData.scatt1 = imnoise(app.simData.scatt1/1e12,'poisson')*1e12;
             app.simData.scatt2 = imnoise(app.simData.scatt2/1e12,'poisson')*1e12;
@@ -235,6 +241,7 @@ classdef simulatePatternApp < handle
             fHeight = 800;
             
             app.figObj = getFigure(app.figObj, ...
+                'NumberTitle', 'off', ...
                 'Name', 'Simulate Scattering', ...
                 'Tag', 'simFigure');
             clf(app.figObj);
@@ -247,18 +254,23 @@ classdef simulatePatternApp < handle
             app.figObj.CloseRequestFcn = @app.thisCloseRequestFcn;
             app.figObj.KeyReleaseFcn = @app.thisKeyReleaseFcn;
             
-            app.tlObj = tiledlayout(app.figObj,2,3);
-            app.axesObjArray(1) = nexttile(app.tlObj,1);
-            app.axesObjArray(2) = nexttile(app.tlObj,3);
-            app.axesObjArray(3) = nexttile(app.tlObj,4);
-            app.axesObjArray(4) = nexttile(app.tlObj,5);
-            app.axesObjArray(5) = nexttile(app.tlObj,6);
+%             app.tlObj = tiledlayout(app.figObj,2,3);
+%             app.axesObjArray(1) = nexttile(app.tlObj,1);
+%             app.axesObjArray(2) = nexttile(app.tlObj,3);
+%             app.axesObjArray(3) = nexttile(app.tlObj,4);
+%             app.axesObjArray(4) = nexttile(app.tlObj,5);
+%             app.axesObjArray(5) = nexttile(app.tlObj,6);
             
-%             app.axesObjArray(1) = mysubplot(2,3,1,'parent',app.figObj);
-%             app.axesObjArray(2) = mysubplot(2,3,3,'parent',app.figObj);
-%             app.axesObjArray(3) = mysubplot(2,3,4,'parent',app.figObj);
-%             app.axesObjArray(4) = mysubplot(2,3,5,'parent',app.figObj);
-%             app.axesObjArray(5) = mysubplot(2,3,6,'parent',app.figObj);
+            app.axesObjArray(1) = mysubplot(2,3,1,'parent',app.figObj);
+            imagesc(nan(1));
+            app.axesObjArray(2) = mysubplot(2,3,3,'parent',app.figObj);
+            imagesc(nan(1));
+            app.axesObjArray(3) = mysubplot(2,3,4,'parent',app.figObj);
+            imagesc(nan(1));
+            app.axesObjArray(4) = mysubplot(2,3,5,'parent',app.figObj);
+            imagesc(nan(1));
+            app.axesObjArray(5) = mysubplot(2,3,6,'parent',app.figObj);
+            imagesc(nan(1));
             
             app.imgObjArray(1) = imagesc(app.axesObjArray(1), 'CData', ...
                 ones(app.simParameter.nPixel),'XData',app.simParameter.XData,...
@@ -281,18 +293,18 @@ classdef simulatePatternApp < handle
                 app.simParameter.ellipse.x,app.simParameter.ellipse.y,'k--',...
                 'linewidth', 2);
             
-%             app.cBarArray(1) = colorbar(app.axesObjArray(1));
-%             app.cBarArray(2) = colorbar(app.axesObjArray(2));
-%             app.cBarArray(3) = colorbar(app.axesObjArray(3));
-%             app.cBarArray(4) = colorbar(app.axesObjArray(4));
-%             app.cBarArray(5) = colorbar(app.axesObjArray(5));
+            app.cBarArray(1) = colorbar(app.axesObjArray(1));
+            app.cBarArray(2) = colorbar(app.axesObjArray(2));
+            app.cBarArray(3) = colorbar(app.axesObjArray(3));
+            app.cBarArray(4) = colorbar(app.axesObjArray(4));
+            app.cBarArray(5) = colorbar(app.axesObjArray(5));
             linkaxes([app.axesObjArray(1), app.axesObjArray(2)], 'xy')
             linkaxes([app.axesObjArray(3), app.axesObjArray(4),...
                 app.axesObjArray(5)], 'xy')
             %             app.axesObjArray(1).Toolbar.Visible = false;
             
-            app.axesObjArray(1).Colormap = ibentcoolwarm;%r2b;
-            app.axesObjArray(2).Colormap = ibentcoolwarm;%r2b;
+            app.axesObjArray(1).Colormap = r2b;
+            app.axesObjArray(2).Colormap = r2b;
             app.axesObjArray(3).Colormap = app.simParameter.cMap;
             app.axesObjArray(4).Colormap = app.simParameter.cMap;
             app.axesObjArray(5).Colormap = app.simParameter.cMap;

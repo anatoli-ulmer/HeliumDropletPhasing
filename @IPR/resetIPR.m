@@ -3,7 +3,7 @@ function obj = resetIPR(obj,varargin)
         error('Optional arguments must come in name-value-pairs.')
     end    
     for i=1:2:numel(varargin)
-        obj.(varargin{i})=varargin{i+1};
+        obj.(varargin{i}) = varargin{i+1};
     end
     
     TMP0 = obj.SCATT;

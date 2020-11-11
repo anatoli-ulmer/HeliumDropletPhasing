@@ -45,14 +45,12 @@ for w=1:nWedges/2
     hAx.wedge(w) = nexttile(hTL,nCols+ceil(w/2)*(nCols)+mod(w+1,2)-1);
 end
 hPopup = uicontrol('parent', hFig, 'Style','popup','String',...
-    {'imorgen','morgenstemning','wjet','parula','jet','hsv','hot',...
-    'cool','gray','igray'},'Units','normalized','Position',...
+    const.colormaps,'Units','normalized','Position',...
     [.1,.8,.18,.18],'Callback',@setColormap); %#ok<NASGU>
 %% draw centering image
 hImg=imagesc(log10(abs(img)),'parent',hAx.center); %#ok<NASGU>
 hAx.center.XLim=[513-128,513+127];
 hAx.center.YLim=hAx.center.XLim;
-colorbar(hAx.center, 'off');
 hAx.center.CLim(1) = -1;
 hold(hAx.center, 'on');
 %% wedges

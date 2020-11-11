@@ -1,10 +1,13 @@
 function pnccdGUI(paths, varargin)
 
 fprintf('\n\n\n\n\nStarting pnCCD GUI _/^\\_/^\\_\n\t\t\t... please be patient ...\n\n\n\n\n')
+
 %% Databases
+
 db = loadDatabases(paths);
 
 %% Figure creation & initialization of grapical objects
+
 hFig.main = findobj('Type','Figure','Name','ASR - main Window');
 if isgraphics(hFig.main)
     clf(hFig.main);
@@ -18,8 +21,8 @@ hFig.shape2 = gobjects(1);
 hFig.simu = gobjects(1);
 hFig.simupol = gobjects(1);
 
-hTL.shape1 = gobjects(1);
-hTL.shape2 = gobjects(1);
+% hTL.shape1 = gobjects(1);
+% hTL.shape2 = gobjects(1);
 
 hAx.pnccd = gobjects(1);
 hAx.pnccd_CBar = gobjects(1);
@@ -35,6 +38,7 @@ hPlt.rings = gobjects(1);
 hPlt.centering = gobjects(1);
 
 %% Declarations
+
 run = 450;
 hit = 68;
 hData.trainId = nan;
@@ -99,6 +103,7 @@ hIPR = [];
 hSimu = [];
 
 %% Input parser
+
 if exist('varargin','var')
     L = length(varargin);
     if rem(L,2) ~= 0, error('Parameters/Values must come in pairs.'); end
@@ -114,10 +119,13 @@ if exist('varargin','var')
 end
 
 %% Init
-initFcn;
+
+initFcn();
 
 %% Methods
+    
     %% Key and Button Callbacks
+    
     function thisKeyPressFcn(src,evt)
         src.Pointer = 'watch'; drawnow;
         switch evt.Key
@@ -126,6 +134,7 @@ initFcn;
             case 'shift', hFig.main.UserData.isRegisteredShift = true;
         end
     end % thisKeyPressFcn
+
     function thisKeyReleaseFcn(src,evt)
         switch evt.Key
             case 'escape',              hFig.main.UserData.stopScript = true;
@@ -154,49 +163,59 @@ initFcn;
             case {'0','numpad0'},       resetRecon;
             case 'k',                   reconANDsave;
             case 'j'
-                %%
-                reset(gpuDevice)
-                initIPRsim;
-                addToPlanDCDI;
-                hIPR.scanParameter('alpha', (0.5:0.05:1.45), ...
-                    fullfile(hSave.folder, 'scans'));
-                initIPRsim;
-                addToPlanDCDI;
-                hIPR.scanParameter('deltaFactor', (0:1:15), ...
-                    fullfile(hSave.folder, 'scans'));
-                initIPRsim;
-                addToPlanNTDCDI;
-                hIPR.scanParameter('alpha', (0.5:0.05:1.45), ...
-                    fullfile(hSave.folder, 'scans'));
-                initIPRsim;
-                addToPlanNTDCDI;
-                hIPR.scanParameter('deltaFactor', (0:1:15), ...
-                    fullfile(hSave.folder, 'scans'));
-                initIPRsim;
-                addToPlanNTHIO;
-                hIPR.scanParameter('alpha', (0.5:0.05:1.45), ...
-                    fullfile(hSave.folder, 'scans'));
-                initIPRsim;
-                addToPlanNTHIO;
-                hIPR.scanParameter('deltaFactor', (0:1:15), ...
-                    fullfile(hSave.folder, 'scans'));
+                %% automated phasing code testing by usage of simulated data
+                alphaScanArray = (0.9:0.01:1.09);
+                deltaFactorScanArray = (0:1:19);
+                
+                for photonsOnDetector = [1e5,1e6,1e7]
+                    hSimu.editObjArray(12).String = photonsOnDetector;
+                    hSimu.startSimulation();
+                    drawnow;
+                    reset(gpuDevice)
+                   
+                    % DCDI
+                    initIPRsim;
+                    addToPlanDCDI;
+                    hIPR.scanParameter('alpha', alphaScanArray, ...
+                        fullfile(hSave.folder, 'scans', ...
+                        sprintf('%.2e',photonsOnDetector) ));
+                    initIPRsim;
+                    addToPlanDCDI;
+                    hIPR.scanParameter('deltaFactor', deltaFactorScanArray, ...
+                        fullfile(hSave.folder, 'scans',...
+                        sprintf('%.2e',photonsOnDetector) ));
+                    initIPRsim;
+                    
+                    % NTDCDI
+                    addToPlanNTDCDI;
+                    hIPR.scanParameter('alpha', alphaScanArray, ...
+                        fullfile(hSave.folder, 'scans',...
+                        sprintf('%.2e',photonsOnDetector) ));
+                    initIPRsim;
+                    addToPlanNTDCDI;
+                    hIPR.scanParameter('deltaFactor', deltaFactorScanArray, ...
+                        fullfile(hSave.folder, 'scans',...
+                        sprintf('%.2e',photonsOnDetector) ));
+                end
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             case 'f12'
-                hIPR.scanParameter('alpha', (0.5:0.05:1.45), ...
+                hIPR.scanParameter('alpha', (0.8:0.025:1.175), ...
                     fullfile(hSave.folder, 'scans'));
             case 'f11'
-                hIPR.scanParameter('deltaFactor', (0:1:11), ...
+                hIPR.scanParameter('deltaFactor', (0:2:20), ...
                     fullfile(hSave.folder, 'scans'));
         end
         unregisterKeys(hFig.main);
         src.Pointer = 'arrow'; drawnow;
         hFig.main.UserData.registeredKey = '';
     end % thisKeyReleaseFcn
+    
     function unregisterKeys(src)
         src.UserData.isRegisteredAlt = false;
         src.UserData.isRegisteredControl = false;
         src.UserData.isRegisteredShift = false;
     end % unregisterKeys
+    
     function thisWindowButtonDownFcn(src,~)
         if strcmp(src.SelectionType, 'open')
             if src.CurrentAxes==hAx.lit
@@ -210,7 +229,9 @@ initFcn;
             end
         end
     end % thisWindowButtonDownFcn
+
     %% Initialization Functions
+    
     function initFcn(~,~)
         if db.runInfo(run).isData
             %             hData.filename = sprintf('%04i_hits.mat', run);
@@ -239,6 +260,7 @@ initFcn;
         loadImageData;
         createPlots;
     end % initFcn
+    
     function createGUI(~,~)
         hFig.main.Visible = 'off';
         hFig.main.Name = 'ASR - main Window';
@@ -249,6 +271,7 @@ initFcn;
         hFig.main.KeyPressFcn = @thisKeyPressFcn;
         hFig.main.KeyReleaseFcn = @thisKeyReleaseFcn;
         hFig.main.WindowButtonDownFcn = @thisWindowButtonDownFcn;
+        hFig.main.CloseRequestFcn = @thisCloseRequestFcn;
         hFig.main.UserData.dragging = false;
         hFig.main.UserData.stopScript = false;
         hFig.main.UserData.isRegisteredAlt = false;
@@ -352,6 +375,7 @@ initFcn;
         hFig.main_uicontrols.twoCores_tb=uicontrol(hFig.main_uicontrols.nCores_bg,...
             'Style','radiobutton','Units','normalized','Position',[0,0,1,.5],'String','2 Cores');
     end % createGUI
+    
     function createPlots(~,~)
         cla(hAx.pnccd);
         hPlt.pnccd = imagesc(nan(hData.par.nPixelFull), 'parent', hAx.pnccd);
@@ -360,6 +384,7 @@ initFcn;
         hAx.pnccd.Title.String = sprintf('run #%03i train id %i', run, hData.trainId);
         hAx.pnccd.CLimMode = 'manual';
         hAx.pnccd.CLim = iif(hData.bool.autoScale, ([nanmin(hData.img.data(:)),nanmax(hData.img.data(:))]), logS(hData.par.cLims));
+        drawnow;
         hAx.pnccd_CBar = colorbar(hAx.pnccd);
         colormap(hAx.pnccd, hData.par.cMap);
         plotRings;
@@ -377,7 +402,26 @@ initFcn;
         hAx.lit.UserData = [hAx.lit.XLim; hAx.lit.YLim];
         updatePlotsFcn;
     end % createPlots
+    
+    function thisCloseRequestFcn(~,~)
+        questAnswer = questdlg('Do you want to save the current databases before closing?',...
+            'Save db files?', 'Yes', 'No', 'No');
+        if strcmp(questAnswer,'Yes')
+            saveDBFcn();
+        end
+        try
+            close(hIPR.figureArray);
+        catch
+        end
+        try
+            close(hSimu.figObj);
+        catch
+        end
+        delete(hFig.main);
+    end % thisCloseRequestFcn
+
     %% Plot Functions
+
     function updatePlotsFcn(~,~)
         updateImgData();
         hPlt.pnccd.CData = logS(hData.img.data);
@@ -400,6 +444,7 @@ initFcn;
         hFig.main.Pointer = 'arrow';
         drawnow limitrate;
     end % updatePlotsFcn
+    
     function plotRings(~,~)
         if hData.bool.drawRings
             hold(hAx.pnccd, 'on');
@@ -410,31 +455,38 @@ initFcn;
             hold(hAx.pnccd, 'off');
         end
     end % plotRings
+    
     function setCMap(~,~)
         hData.par.cMap = hFig.main_uicontrols.cMap_edt.String;
         colormap(hAx.pnccd, hData.par.cMap);
     end % setCMap
+    
     function manualCLimChange(~,~)
         hData.par.cLims = [str2num_fast(hFig.main_uicontrols.CMin_edt.String), str2num_fast(hFig.main_uicontrols.CMax_edt.String)];
         updatePlotsFcn;
     end % manualCLimChange
+    
     function scaleChangeFcn(~,~)
         hData.bool.autoScale = hFig.main_uicontrols.autoScale_cbx.Value;
         hData.bool.logScale = hFig.main_uicontrols.logScale_cbx.Value;
         updatePlotsFcn;
     end % scaleChangeFcn
+    
     function val = logS(val)
         if hData.bool.logScale
             val(val<=0) = nan;
             val = log10(val);
         end
     end % logS
+    
     function setNSteps(~,~)
         hData.var.nSteps = str2num_fast(hFig.main_uicontrols.nSteps_edt.String);
     end % setNSteps
+    
     function setNLoops(~,~)
         hData.var.nLoops = str2num_fast(hFig.main_uicontrols.nLoops_edt.String);
     end % setNLoops
+    
     function ringCbxCallback(~,~)
         hData.bool.drawRings = hFig.main_uicontrols.ring_cbx.Value;
         if hData.bool.drawRings
@@ -443,7 +495,9 @@ initFcn;
             delete(hPlt.rings);
         end
     end % ringCbxCallback
+
     %% Load Data Functions
+
     function loadImageData(~,~)
         fprintf('Loading run #%03d hit %01d ...\n', run, hit)
         % Get data from databases
@@ -510,12 +564,14 @@ initFcn;
         end
         updateImgData();
     end % loadImageData
+    
     function updateImgData(~,~)
         if hData.bool.simulationMode, hData.img.data=hData.img.dataSimulated;
         elseif hData.bool.isCropped, hData.img.data=hData.img.dataCropped;
         else, hData.img.data=hData.img.dataCorrected;
         end
     end % updateImgData
+    
     function loadNextHit(src,evt,direction)
         if nargin<3
             switch src.String
@@ -534,8 +590,9 @@ initFcn;
         end
         createPlots;
     end % loadNextHit
+    
     function loadNextFile(~,~,filepath,nextRun,direction)
-        saveDBFcn
+        saveDBFcn();
         %         fprintf('saving recon file ...'); drawnow;
         %         save(fullfile(paths.recon, sprintf('r%04d_recon_%s.mat', run, db.runInfo(run).doping.dopant{:})), 'hRecon', '-v7.3');
         %         fprintf('done!\n'); drawnow;
@@ -574,6 +631,7 @@ initFcn;
         hit = iif(direction>0,1,numel(db.runInfo(run).nlit_smooth));
         loadImageData;
     end % loadNextFile
+    
     function getFileFcn(src,evt)
         [fn, fp] = uigetfile(fullfile(paths.pnccd, hData.filename));
         if isequal(fn,0)
@@ -586,10 +644,13 @@ initFcn;
             createPlots;
         end
     end % getFileFcn
+    
     %% Centering und Shape Determination
+    
     function centerImgFcn(~,~)
         hFig.main.Pointer = 'watch'; drawnow;
         hFig.centering = getFigure(hFig.centering, ...
+            'NumberTitle', 'off', ...
             'Name', 'Centering pattern',...
             'KeyPressFcn', @centerkeyfun);
         %         if hit<=numel(db.center(run).center)
@@ -622,6 +683,7 @@ initFcn;
 %         save(fullfile(paths.db, 'db.mat'), 'db');
         fprintf('    -> centered\n')
     end % centerImgFcn
+    
     function centerkeyfun(~,evt)
         hFig.main.Pointer = 'watch'; drawnow;
         dc = 1;
@@ -653,22 +715,36 @@ initFcn;
         hPlt.centering.red = draw_rings(hAx.centering, flipud(hData.var.center), 0, 80:20:150, 2, 'r', '--');
         hFig.main.Pointer = 'arrow'; drawnow;
     end % centerkeyfun
+    
     function findShapeFcn(~,~)
         hFig.main.Pointer = 'watch'; drawnow;
-        hFig.shape1 = getFigure(hFig.shape1, 'Name', 'shape figure #1');
-        hFig.shape2 = getFigure(hFig.shape2, 'Name', 'shape figure #2');
+        hFig.shape1 = getFigure(hFig.shape1, ...
+            'NumberTitle', 'off', 'Name', 'shape figure #1');
+        hFig.shape2 = getFigure(hFig.shape2, ...
+            'NumberTitle', 'off', 'Name', 'shape figure #2');
         if ~isgraphics(hAx.shape1(1))
-            hTL.shape1=tiledlayout(hFig.shape1,1,4);
-            hAx.shape1(1)=nexttile(hTL.shape1);
-            hAx.shape1(2)=nexttile(hTL.shape1);
-            hAx.shape1(3)=nexttile(hTL.shape1);
-            hAx.shape1(4)=nexttile(hTL.shape1);
+%             hTL.shape1=tiledlayout(hFig.shape1,1,4);
+%             hAx.shape1(1)=nexttile(hTL.shape1);
+%             hAx.shape1(2)=nexttile(hTL.shape1);
+%             hAx.shape1(3)=nexttile(hTL.shape1);
+%             hAx.shape1(4)=nexttile(hTL.shape1);
+            hAx.shape1(1)=subplot(1,4,1,'Parent',hFig.shape1);
+            imagesc(hAx.shape1(1), nan(1));
+            hAx.shape1(2)=subplot(1,4,2,'Parent',hFig.shape1);
+            imagesc(hAx.shape1(2), nan(1));
+            hAx.shape1(3)=subplot(1,4,3,'Parent',hFig.shape1);
+            imagesc(hAx.shape1(3), nan(1));
+            hAx.shape1(4)=subplot(1,4,4,'Parent',hFig.shape1);
+            imagesc(hAx.shape1(4), nan(1));
         end
         if ~isgraphics(hAx.shape2(1))
-            hTL.shape2=tiledlayout(hFig.shape2,1,3);
-            hAx.shape2(1)=nexttile(hTL.shape2);
-            hAx.shape2(2)=nexttile(hTL.shape2);
-            hAx.shape2(3)=nexttile(hTL.shape2);
+%             hTL.shape2=tiledlayout(hFig.shape2,1,3);
+%             hAx.shape2(1)=nexttile(hTL.shape2);
+%             hAx.shape2(2)=nexttile(hTL.shape2);
+%             hAx.shape2(3)=nexttile(hTL.shape2);
+            hAx.shape2(1)=mysubplot(1,3,1,'Parent',hFig.shape2);
+            hAx.shape2(2)=mysubplot(1,3,2,'Parent',hFig.shape2);
+            hAx.shape2(3)=mysubplot(1,3,3,'Parent',hFig.shape2);
         end
         [hData.shape, hAx.shape2] = findShapeFit(...
             hData.img.dataCropped, hData.var.radiusInPixel, ...
@@ -684,20 +760,29 @@ initFcn;
         xData=6*( size(hData.img.dropletdensity,2)*[-0.5,0.5]-[0,1]);
         yData=6*( size(hData.img.dropletdensity,1)*[-0.5,0.5]-[0,1]);
         xyLims=db.shape(run).shape(hit).R*1.2*[-1,1];
-        imagesc(hAx.shape2(3), xData ,yData ,hData.img.dropletdensity); 
+        
+        imagesc(hAx.shape2(3), xData ,yData ,hData.img.dropletdensity);
         title('calculated droplet density');
-        colormap(hAx.shape2(3),'igray'); hold(hAx.shape2(3),'on');
+        hold(hAx.shape2(3),'on');
         plot(hAx.shape2(3),hData.img.dropletOutline.x,hData.img.dropletOutline.y,'r--');
-
         set(hAx.shape2(3), 'XLim', xyLims, 'YLim', xyLims);
-%         linkaxes([hAxSupport,hAxDensity],'xy');
-%         xlim([-1,1]*mean([hData.shape.a,hData.shape.a])/2*1.2*6); ylim(xlim);
-%         figure(hFig.main)
+
+        drawnow; % necessary before creating colorbars
+        colorbar(hAx.shape2(1),'Location','southoutside');
+        colorbar(hAx.shape2(2),'Location','southoutside');
+        colorbar(hAx.shape2(3),'Location','southoutside');
+        colormap(hAx.shape2(1),r2b);
+        colormap(hAx.shape2(2),r2b);
+        colormap(hAx.shape2(3),'igray'); 
+        
+        figure(hFig.main)
         hFig.main.Pointer = 'arrow'; drawnow;
         updatePlotsFcn;
         fprintf('    -> shape found\n')
     end % findShapeFcn
+    
     %% Reconstruction Functions
+    
     function initIPR(~,~)
         hFig.main.Pointer = 'watch'; drawnow limitrate;
         clear hIPR;
@@ -711,6 +796,7 @@ initFcn;
         hIPR.figureArray.Pointer = 'arrow'; drawnow;
         %         figure(hFig.main)
     end % initIPR
+    
     function initIPRsim(~,~)
         if ~hFig.main.UserData.isValidSimulation
             dialogAnswer = questdlg('No valid simulation window found. Would you like to start a simulation?', ...
@@ -748,31 +834,41 @@ initFcn;
         hFig.main.Pointer = 'arrow';
         hIPR.figureArray.Pointer = 'arrow'; drawnow;
     end % initIPRsim
+    
     function addToPlanER(~,~)
         hIPR.reconAddToPlan('er',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanER
+    
     function addToPlanDCDI(~,~)
         hIPR.reconAddToPlan('dcdi',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanDCDI
+    
     function addToPlanNTDCDI(~,~)
         hIPR.reconAddToPlan('ntdcdi',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanNTDCDI
+    
     function addToPlanNTHIO(~,~)
         hIPR.reconAddToPlan('nthio',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanNTHIO
+    
     function addToPlanRAAR(~,~)
         hIPR.reconAddToPlan('raar',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanRAAR
+    
     function addToPlanHIO(~,~)
         hIPR.reconAddToPlan('hio',hData.var.nSteps,hData.var.nLoops);
     end % addToPlanHIO
+    
     function resetRecon(~,~)
         hIPR.resetIPR();
     end % resetRecon
+    
     function runRecon(~,~)
         hIPR.reconRunPlan();
     end % runRecon
+    
     %% Simulation Functions
+    
     function startSimulation(~,~)
         fprintf('Starting simulation ...\n')
         hData.bool.simulationMode = true;
@@ -784,26 +880,31 @@ initFcn;
         fprintf('\tSimulation started!\n')
         drawnow;
     end % startSimulation
+    
     function setNSimCores(~,~)
         hData.par.nSimCores = hFig.main_uicontrols.oneCore_tb.Value;
     end % setNSimCores
+    
     %% Process and Save Data
+    
     function saveDBFcn(~,~)
-        dbCenter=db.center;
-        dbSizing=db.sizing;
-        dbShape=db.shape;
-        dbRunInfo=db.runInfo;
-       save(fullfile(paths.db,'\db.mat'),'db','-v7.3')
-       save(fullfile(paths.db,' \db_center.mat'),'dbCenter','-v7.3')
-       save(fullfile(paths.db, '\db_run-info.mat'),'dbRunInfo','-v7.3')
-       save(fullfile(paths.db, '\db_shape.mat'),'dbShape','-v7.3')
-       save(fullfile(paths.db, '\db_sizing.mat'),'dbSizing','-v7.3')
-    end
+        db_center=db.center;
+        db_sizing=db.sizing;
+        db_shape=db.shape;
+        db_run_info=db.runInfo;
+       save(fullfile(paths.db,'db.mat'),'db','-v7.3')
+       save(fullfile(paths.db,' db_center.mat'),'db_center','-v7.3')
+       save(fullfile(paths.db, 'db_run_info.mat'),'db_run_info','-v7.3')
+       save(fullfile(paths.db, 'db_shape.mat'),'db_shape','-v7.3')
+       save(fullfile(paths.db, 'db_sizing.mat'),'db_sizing','-v7.3')
+    end % saveDBFcn
+
     function saveImgFcn(~,~)
         saveName = getSaveName;
         exportgraphics(gca,saveName,'Resolution',const.printRes)
         fprintf('Current Axes saved to %s.\n', saveName);
-    end
+    end % saveImgFcn
+
     function fullpath = getSaveName
         hSave.folder=fullfile(paths.img,...
             sprintf('%s',datetime('now','Format','yyyy-MM-dd')),...
@@ -814,7 +915,8 @@ initFcn;
         datetime('now','Format','yyyy-MM-dd_hhmmss-SSS'),hSave.fileFormat);
         hSave.fullpath=fullfile(hSave.folder,hSave.fileName);
         fullpath=hSave.fullpath;
-    end
+    end % getSaveName
+
     function reconANDsave(~,~)
         %         try d = load(fullfile(paths.db, 'db_recon.mat')); db_recon = d.db_recon; clear d;
         %         catch; fprintf('could not load db_recon\n'); end
@@ -848,4 +950,5 @@ initFcn;
             loadNextHit([],[],1)
         end
     end % reconAndSave
+
 end % pnccdGUI

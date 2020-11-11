@@ -102,10 +102,10 @@ title(fig1axes(2), 'filtered real part');
 title(fig1axes(3), 'traces of real part');
 title(fig1axes(4), 'position of maximum');
 
-arrayfun(@(i) colorbar(fig1axes(i), 'off'), 1:4);
+% arrayfun(@(i) colorbar(fig1axes(i), 'off'), 1:4);
 arrayfun(@(i) xlabel(fig1axes(i), 'radius in px'), 1:4);
 arrayfun(@(i) ylabel(fig1axes(i), 'angle in degree'), 1:4);
-arrayfun(@(i) colormap(fig1axes(i), r2b), 1:2);
+% arrayfun(@(i) colormap(fig1axes(i), r2b), 1:2);
 arrayfun(@(i) set(fig1axes(i),'YDir','normal','YTick',0:30:360,...
     'XLim',[rmin,rmax],'YLim',[0,360],'PlotBoxAspectRatioMode','auto',...
     'DataAspectRatioMode','auto'), 1:4);
@@ -143,13 +143,12 @@ xLims=rpix*1.2*[-1,1]+size(R,2)/2;
 yLims=rpix*1.2*[-1,1]+size(R,1)/2;
 
 imagesc(real(R),'parent',fig2axes(1)); 
-colormap(fig2axes(1),r2b);
 set(fig2axes(1),'XLim',xLims,'YLim',yLims);
 
 
 hold(fig2axes(2), 'off'); 
 imagesc(real(R),'parent',fig2axes(2)); 
-colormap(fig2axes(2),r2b); 
+
 hold(fig2axes(2), 'on');
 plot(fig2axes(2),xmax, ymax, 'kx', 'MarkerSize',3,'LineWidth',.1);
 plot(fig2axes(2),xmax_copy, ymax_copy, 'rx', 'MarkerSize',2);
