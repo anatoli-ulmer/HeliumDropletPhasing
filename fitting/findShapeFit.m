@@ -1,58 +1,73 @@
-function [f, fig2axes] = findShapeFit(img,rpix,varargin)
+function [shape, goodnessOfFit, hAxesFig2] = findShapeFit(img, ...
+    radiusPX, varargin)
 
-rpix = rpix*2; %because autocorrelation
-dpix = 15;
-dth = 0.99;
-sigma=rpix;
-rrange = .5;
-rmin = round((1-rrange)*rpix);
-rmax = round((1+rrange)*rpix);
-kang = 100;
-krad = 3;
-nprofs = 100;
+nPix = 1024;
+radiusPX = radiusPX * nPix/1024*2; %because autocorrelation
+dilutePX = 20;
+diluteThreshold = 0.9;
+centerSigma=radiusPX;
+radialRange = .5;
+rMin = round((1-radialRange)*radiusPX);
+rMax = round((1+radialRange)*radiusPX);
+angularKernelPX = 100;
+radialKernelPX = 3;
+nProfiles = 100;
 thresh = 1/12;
-fig1 = [];
-fig2 = [];
-fig1axes = [];
-fig2axes = [];
+hAxesFig1 = [];
+hAxesFig2 = [];
+shape = [];
 
 if exist('varargin','var')
     L = length(varargin);
     if rem(L,2) ~= 0, error('Parameters/Values must come in pairs.'); end
     for ni = 1:2:L
         switch lower(varargin{ni})
-            case 'fig1', fig1 = varargin{ni+1};
-            case 'fig2', fig2 = varargin{ni+1};
-            case 'ax1', fig1axes = varargin{ni+1};
-            case 'ax2', fig2axes = varargin{ni+1};
+            case 'haxesfig1', hAxesFig1 = varargin{ni+1};
+            case 'haxesfig2', hAxesFig2 = varargin{ni+1};
         end
     end
 end
 
-[xx,yy] = meshgrid((1:size(img,2))-size(img,2)/2,(1:size(img,1))-size(img,1)/2);
 
-GAUSSMASK = 1-exp(-(xx.^2+yy.^2)/2/sigma^2);
-MASK = single(~isnan(img));
+imgCenter = size(img)/2+1;
+img = img( imgCenter(1)-nPix/2:imgCenter(1)+nPix/2-1, ...
+    imgCenter(2)-nPix/2:imgCenter(2)+nPix/2-1 );
+imgSize = size(img);
+
+[xx,yy] = meshgrid(-imgSize(2)/2:imgSize(2)/2-1,-imgSize(1)/2:imgSize(1)/2-1);
+
+img( xx.^2+yy.^2 > 480.^2) = nan;
+% img( xx.^2+yy.^2 <= 60.^2) = nan;
+
+centerFilter = 1 - exp( -(xx.^2+yy.^2)/2/centerSigma^2 );
+nanMask = isnan(img);
+floatMask = single(~nanMask);
+% floatMask = single(repmat(~nanMask(:,513), 1, size(nanMask,2)));
 imgshow = img;
 imgshow(isnan(imgshow)) = 0;
 imgshow(imgshow<.5) = 0;
 
 I = sqrt(imgshow);
-DILUTEMASK = single(imgaussfilt((MASK),dpix)>dth);
-MASK = imgaussfilt((DILUTEMASK),dpix) .* MASK;
-I = I.*MASK;
-R = fftshift(ifft2(ifftshift(I)));
-R=(R).*GAUSSMASK;
+diluteMask = single( imgaussfilt( floatMask, dilutePX) > diluteThreshold );
+filterMask = imgaussfilt( (diluteMask), dilutePX ) .* diluteMask .* floatMask;
+I = I.*filterMask;
+R = ift2(I);
+R=(R).*centerFilter;
 
+% figure(3446); clf
+% mysubplot(2,2,1); imagesc(floatMask);
+% mysubplot(2,2,2); imagesc(log10(abs(imgshow)));
+% mysubplot(2,2,3); imagesc(diluteMask);
+% mysubplot(2,2,4); imagesc(filterMask);
 
 pol = polar_matrix(R,'xcenter', size(img,2)/2+1,'ycenter',size(img,1)/2+1);
-pol = pol(:,rmin:rmax);
+pol = pol(:,rMin:rMax);
 kernel = repmat(gausswin(size(pol,2))',size(pol,1),1);
-pol = pol.*kernel;
+% pol = pol.*kernel;
 
-kernel = ones(kang, krad);
-kernel = kernel.*repmat(gausswin(krad)', kang, 1);
-kernel = kernel.*repmat(gausswin(kang), 1, krad);
+kernel = ones(angularKernelPX, radialKernelPX);
+kernel = kernel.*repmat(gausswin(radialKernelPX)', angularKernelPX, 1);
+kernel = kernel.*repmat(gausswin(angularKernelPX), 1, radialKernelPX);
 fpol = conv2(pol, kernel, 'same');
 pol = real(pol);
 fpol = real(fpol);
@@ -60,8 +75,8 @@ fpol = real(fpol);
 [~,maxpol] = max(pol,[],2);
 % [~,minfpol] = min(fpol,[],2);
 [~,maxfpol] = max(fpol,[],2);
-maxpol= maxpol+rmin-1;
-maxfpol= maxfpol+rmin-1;
+maxpol= maxpol+rMin-1;
+maxfpol= maxfpol+rMin-1;
 % maxpol= (minpol+maxpol)/2+rmin;
 % maxfpol= (minfpol+maxfpol)/2+rmin;
 
@@ -79,35 +94,35 @@ maxfpol_copy(std(maxfpol_copy)>=abs(maxfpol_copy-mean(maxfpol_copy))) = nan;
 % figure(23343)
 % plot(maxpol)
 
-pol = pol/nanmax(abs(pol(:)));
-fpol = fpol/nanmax(abs(fpol(:)));
+pol = pol/nanmax(real(pol(:)));
+fpol = fpol/nanmax(real(fpol(:)));
 
 
-dstep = size(fpol,1)/nprofs;
-lprofx = cell2mat(arrayfun(@(i) (rmin:rmax)', 1:nprofs, 'UniformOutput', false));
-lprofy = cell2mat(arrayfun(@(i) dstep*i/size(fpol,1)*360+fpol(round(dstep*i),:)'*10, 1:nprofs, 'UniformOutput', false));
-x = rmin:rmax;
+dstep = size(fpol,1)/nProfiles;
+lprofx = cell2mat(arrayfun(@(i) (rMin:rMax)', 1:nProfiles, 'UniformOutput', false));
+lprofy = cell2mat(arrayfun(@(i) dstep*i/size(fpol,1)*360+fpol(round(dstep*i),:)'*10, 1:nProfiles, 'UniformOutput', false));
+x = rMin:rMax;
 
-imagesc(fig1axes(1),[rmin,rmax],[0,360],pol, [-1,1]);
-imagesc(fig1axes(2),[rmin,rmax],[0,360],fpol, [-1,1]);
-plot(fig1axes(3),lprofx,lprofy); 
-plot(fig1axes(4),maxpol, (1:numel(maxpol))/size(pol,1)*360, maxfpol,(1:numel(maxfpol))/size(fpol,1)*360,...
+imagesc(hAxesFig1(1),[rMin,rMax],[0,360],pol, [-1,1]);
+imagesc(hAxesFig1(2),[rMin,rMax],[0,360],fpol, [-1,1]);
+plot(hAxesFig1(3),lprofx,lprofy); 
+plot(hAxesFig1(4),maxpol, (1:numel(maxpol))/size(pol,1)*360, maxfpol,(1:numel(maxfpol))/size(fpol,1)*360,...
     x, ones(1,numel(x))*360*thresh, 'g--',...
     x, ones(1,numel(x))*360*(.5-thresh), 'g--',...
     x, ones(1,numel(x))*360*(.5+thresh), 'g--',...
     x, ones(1,numel(x))*360*(1-thresh), 'g--');
 
-title(fig1axes(1), 'weighted real part');
-title(fig1axes(2), 'filtered real part');
-title(fig1axes(3), 'traces of real part');
-title(fig1axes(4), 'position of maximum');
+title(hAxesFig1(1), 'weighted real part');
+title(hAxesFig1(2), 'filtered real part');
+title(hAxesFig1(3), 'traces of real part');
+title(hAxesFig1(4), 'position of maximum');
 
 % arrayfun(@(i) colorbar(fig1axes(i), 'off'), 1:4);
-arrayfun(@(i) xlabel(fig1axes(i), 'radius in px'), 1:4);
-arrayfun(@(i) ylabel(fig1axes(i), 'angle in degree'), 1:4);
+arrayfun(@(i) xlabel(hAxesFig1(i), 'radius in px'), 1:4);
+arrayfun(@(i) ylabel(hAxesFig1(i), 'angle in degree'), 1:4);
 % arrayfun(@(i) colormap(fig1axes(i), r2b), 1:2);
-arrayfun(@(i) set(fig1axes(i),'YDir','normal','YTick',0:30:360,...
-    'XLim',[rmin,rmax],'YLim',[0,360],'PlotBoxAspectRatioMode','auto',...
+arrayfun(@(i) set(hAxesFig1(i),'YDir','normal','YTick',0:30:360,...
+    'XLim',[rMin,rMax],'YLim',[0,360],'PlotBoxAspectRatioMode','auto',...
     'DataAspectRatioMode','auto'), 1:4);
 
 th=thresh*size(fpol,1);
@@ -125,33 +140,46 @@ ymax = size(img,1)/2+1+r_array.*sin(phi_array);
 xmax_copy = size(img,2)/2+1+r_array_copy.*cos(phi_array);
 ymax_copy = size(img,1)/2+1+r_array_copy.*sin(phi_array);
 
+%% Fitting
 ft = fittype('ellipse_fitfcn(x, a, b, rot)');
-f = fit( phi_array(~isnan(r_array))',r_array(~isnan(r_array))', ft, 'StartPoint', [rpix, rpix, 0] );
+[fitResults, goodnessOfFit] = fit( phi_array(~isnan(r_array))', ...
+    r_array(~isnan(r_array))', ft, 'StartPoint', [radiusPX, radiusPX, 0] );
 
-warning('off','curvefit:cfit:subsasgn:coeffsClearingConfBounds');
-f.rot = mod(f.rot, 2*pi);
-warning('on','curvefit:cfit:subsasgn:coeffsClearingConfBounds');
+shape.fitResults = fitResults;
+shape.goodnessOfFit = goodnessOfFit;
+shape.a = fitResults.a * 1024/nPix;
+shape.b = fitResults.b * 1024/nPix;
+shape.rot = mod(fitResults.rot+pi, 2*pi) - pi;
+shape.R = (fitResults.a+fitResults.b)/2/2;
+shape.aspectRatio = iif(fitResults.a>fitResults.b, fitResults.a/fitResults.b, ...
+    fitResults.b/fitResults.a);
 
+%% Plotting
 phi_array = linspace(0,2*pi,size(fpol,1));
 
-ellipseX = size(img,2)/2+1+ellipse_fitfcn(phi_array, f.a, f.b, f.rot).*cos(phi_array);
-ellipseY = size(img,1)/2+1+ellipse_fitfcn(phi_array, f.a, f.b, f.rot).*sin(phi_array);
-ellipse2X = size(img,2)/2+1+ellipse_fitfcn(phi_array, f.a/2, f.a/2, f.rot).*cos(phi_array);
-ellipse2Y = size(img,1)/2+1+ellipse_fitfcn(phi_array, f.a/2, f.a/2, f.rot).*sin(phi_array);
+ellipseX = size(img,2)/2+1+ellipse_fitfcn(phi_array, fitResults.a, fitResults.b, fitResults.rot).*cos(phi_array);
+ellipseY = size(img,1)/2+1+ellipse_fitfcn(phi_array, fitResults.a, fitResults.b, fitResults.rot).*sin(phi_array);
+% ellipse2X = size(img,2)/2+1+ellipse_fitfcn(phi_array, fitResults.a/2, fitResults.a/2, fitResults.rot).*cos(phi_array);
+% ellipse2Y = size(img,1)/2+1+ellipse_fitfcn(phi_array, fitResults.a/2, fitResults.a/2, fitResults.rot).*sin(phi_array);
 
-xLims=rpix*1.2*[-1,1]+size(R,2)/2;
-yLims=rpix*1.2*[-1,1]+size(R,1)/2;
+xyLims=radiusPX*1.5*[-1,1] + size(R,2)/2 + [0,1];
 
-imagesc(real(R),'parent',fig2axes(1)); 
-set(fig2axes(1),'XLim',xLims,'YLim',yLims);
+imagesc(real(R),'parent',hAxesFig2(1)); 
+set(hAxesFig2(1),'XLim',xyLims,'YLim',xyLims);
 
+hold(hAxesFig2(2), 'off'); 
+imagesc(real(R),'parent',hAxesFig2(2)); 
 
-hold(fig2axes(2), 'off'); 
-imagesc(real(R),'parent',fig2axes(2)); 
+colorbar(hAxesFig2(1),'Location','southoutside');
+colorbar(hAxesFig2(2),'Location','southoutside');
 
-hold(fig2axes(2), 'on');
-plot(fig2axes(2),xmax, ymax, 'kx', 'MarkerSize',3,'LineWidth',.1);
-plot(fig2axes(2),xmax_copy, ymax_copy, 'rx', 'MarkerSize',2);
-plot(fig2axes(2),ellipseX, ellipseY, 'g--')
-plot(fig2axes(2),ellipse2X, ellipse2Y, 'g--')
-set(fig2axes(2),'XLim',xLims,'YLim',yLims);
+hold(hAxesFig2(2), 'on');
+plot(hAxesFig2(2),xmax, ymax, 'gx', 'MarkerSize',3,'LineWidth',.1);
+plot(hAxesFig2(2),xmax_copy, ymax_copy, 'rx', 'MarkerSize',3);
+plot(hAxesFig2(2),ellipseX, ellipseY, 'k--')
+% plot(hAxesFig2(2),ellipse2X, ellipse2Y, 'g--')
+set(hAxesFig2(2),'XLim',xyLims,'YLim',xyLims);
+
+title(hAxesFig2(1), sprintf('[R, ar] = [%.2fpx, %.4f]', shape.R, shape.aspectRatio));
+title(hAxesFig2(2), sprintf('[a, b, rot] = [%.2fpx, %.2fpx, %.2frad]', ...
+    shape.a, shape.b, shape.rot));

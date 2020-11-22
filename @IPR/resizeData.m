@@ -11,6 +11,10 @@ function obj = resizeData(obj)
     obj.SCATT = (single(obj.SCATT));
     obj.support0 = (single(obj.support0));
     obj.rho0 = (single(obj.rho0));
+    
+    if obj.filter.gauss.isApplied
+        obj.SCATT = imgaussfilt(obj.SCATT, obj.filter.gauss.sigma);
+    end
 
     obj.SCATT(obj.SCATT<obj.masking.minPhotons) = 0;
     obj.SCATT(obj.SCATT>obj.masking.maxPhotons) = nan;

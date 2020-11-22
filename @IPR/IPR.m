@@ -2,7 +2,7 @@ classdef IPR < handle
     properties
         %% General
         gpuAvailable                                                            % number of available gpu devices
-        
+        objectHandle
         %% Fourier space variables
         pnCCDimg
         SCATT                                                                   % Scattering pattern
@@ -55,6 +55,7 @@ classdef IPR < handle
         phaseMin = -Inf * ones(1, 'single')
         mixScatt = false
         masking
+        filter
         
         %% image properties
         center = nan(1,2, 'single');

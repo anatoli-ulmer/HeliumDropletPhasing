@@ -4,14 +4,17 @@ function obj = configIPR(obj)
     obj.binMethod                       = 'bicubic';          	% default: 'bicubic' - method for imresize (see documentation)
     obj.random_phase                    = false;                % default: false - use random starting phase
     
+    obj.filter.gauss.isApplied          = false;
+    obj.filter.gauss.sigma              = 2;
+    
     %% masking
     obj.masking.minPhotons              = single(0.0);        	% default: 0.25 - low signal cutoff in photons
     obj.masking.maxPhotons              = single(Inf);        	% default: Inf - high signal cutoff in photons 
-    obj.masking.constraint_wedgeMask    = true;                 % default: true - cut wedges in detector slit direction (for straylight)
+    obj.masking.constraint_wedgeMask    = true;                % default: true - cut wedges in detector slit direction (for straylight)
     obj.masking.wedgeAngle              = single(15/180*pi);    % default: 15*pi/180 - wedge mask half opening angle in rad
-    obj.masking.constraint_gapMask      = true;                 % default: true - mask gap slit (for straylight)
+    obj.masking.constraint_gapMask      = true;                % default: true - mask gap slit (for straylight)
     obj.masking.gapSize                 = single(80);           % default: 80 - gap mask size in px
-    obj.masking.fillMask                = false;                % default: true - fills missing data with current reconstructed intensity
+    obj.masking.fillMask                = true;                % default: true - fills missing data with current reconstructed intensity
     
     obj.masking.rmin                    = single(0);        	% default: 0 - radial mask min px cutoff
     obj.masking.constraint_RMask        = false;                % default: false - cut large angle scattering signal above rmax
@@ -19,7 +22,7 @@ function obj = configIPR(obj)
     obj.masking.RMASK_smoothPix         = single(20);       	% default: 20 - smoothing radial mask to avoid ringing
     obj.masking.dilate                  = false;                % default: false - dilate masked area (useful for straylight at detector edges)
     obj.masking.dilateFactor            = double(1);        	% default: 1 - IF dilateMask: dilate by px
-
+    
     obj.support_dilate                  = false;                % default: false - generate more loose support by dilation
     obj.support_dilateFactor            = double(1);            % default: 1 - dilate kernel size
     obj.support_dilateMethod            = 'disk';               % default: 'disk' - dilate kernel shape
@@ -47,8 +50,8 @@ function obj = configIPR(obj)
     obj.clims_scatt                     = log10([0.5, 1000]);   % default: log10([0.5, 1000]) - colormap limits for Fourier domain (log10 scale!)
     obj.reconrange                      = 3;                    % default: 3 - dropdown menu index for plot range of real space images
     obj.intpart                         = 1;                    % default: 1 - dropdown menu index for plot range of fourier space images
-    obj.reconpart                       = 'imag';               % 'real' | 'imag' (default) | 'abs' | 'angle' -  filter for Real space image
+    obj.reconpart                       = 'abs';               % 'real' | 'imag' (default) | 'abs' | 'angle' -  filter for Real space image
     obj.normalize_shape                 = false;                
-    obj.substract_shape                 = false;                % subtract calculated shape before plotting
+    obj.substract_shape                 = true;                % subtract calculated shape before plotting
     obj.subscale                        = 1;                    % scale calculated shape before subtraction
 end

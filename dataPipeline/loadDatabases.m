@@ -1,6 +1,6 @@
 function db =  loadDatabases(paths, db)
     if nargin<2
-        db = [];
+        load(fullfile(paths.db, 'db.mat'), 'db');
     end
     if ~isfield(db, 'runInfo')
         fprintf( 'loading db_run_info from %s ... \n', fullfile(paths.db) );

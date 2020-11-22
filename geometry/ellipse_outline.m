@@ -1,6 +1,10 @@
 function el = ellipse_outline(a, b, rot, center, Npts)
-    % returns data of an ellipse outline in 'el' with half axes 'a' and 'b',
-    % rotated by 'rot', centered around 'center' with 'Npts' points.
+
+% ELLIPSE_OUTLINE
+% 
+% returns data of an ellipse outline in 'el' with half axes 'a' and 'b',
+% rotated by 'rot', centered around 'center' with 'Npts' points.
+
     if ~exist('rot', 'var'); rot = 0; end
     if ~exist('center', 'var'); center = [0,0]; end
     if ~exist('Npts', 'var'); Npts = 100; end

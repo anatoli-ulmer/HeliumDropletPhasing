@@ -45,19 +45,19 @@ set(0, 'defaultAxesZGrid', 'on')
 set(0, 'defaultImageCreateFcn', @newImageFcn)
 set(0, 'defaultLineLineWidth', 2)
 set(0, 'defaultUicontrolBackgroundcolor', [1 1 1])
+close(get(groot,'CurrentFigure'));
 
-%% switch off for performance reasons if necessary:
+% switch off for performance reasons if necessary:
 % set(groot,'DefaultFigureGraphicsSmoothing','off')
 
 %% first doped run: 283
 
-pnccdGUI(paths,...
+asrHandles = pnccdGUI(paths,...
     'run',301, ...
     'hit', 1);
 
 function newImageFcn(src,~)
     axis(src.Parent, 'image');
-%     colorbar(src.Parent);
     set(src.Parent,'YDir','normal','XGrid','off','YGrid','off','ZGrid','off');
 end
 
