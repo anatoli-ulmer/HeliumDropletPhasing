@@ -22,7 +22,7 @@ else
     paths.recon = fullfile(paths.storage, 'recon');
     paths.pnccd_dcg = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain');
     paths.pnccd_dcgb = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain_bg');
-    paths.pnccd = paths.pnccd_dcg;
+    paths.pnccd = paths.pnccd_dcgb;
     save(pathFile, 'paths')
 end
 
@@ -34,8 +34,8 @@ scrW = scrSize(3)-scrSize(1);
 scrH = scrSize(4)-scrSize(2);
 set(0, 'defaultFigurePosition', [.25 .25 .5 .5].*[scrW scrH scrW scrH])
 set(0, 'defaultFigurePaperUnits', 'centimeters')
-set(0, 'defaultFigurePaperSize', [29.6774316979100, 20.9840419481200])
-set(0, 'defaultFigurePaperPosition', [0, 0, 29.6774316979100, 20.9840419481200])
+set(0, 'defaultFigurePaperSize', [29.67, 20.98])
+set(0, 'defaultFigurePaperPosition', [0, 0, 29.67, 20.98])
 set(0, 'defaultFigureColormap', ihesperia)
 set(0, 'defaultAxesOuterPosition', [.0 .01 1 .99])
 set(0, 'defaultAxesBox', 'on')
@@ -43,6 +43,7 @@ set(0, 'defaultAxesXGrid', 'on')
 set(0, 'defaultAxesYGrid', 'on')
 set(0, 'defaultAxesZGrid', 'on')
 set(0, 'defaultImageCreateFcn', @newImageFcn)
+set(0, 'defaultLineCreateFcn', @newLineFcn)
 set(0, 'defaultLineLineWidth', 2)
 set(0, 'defaultUicontrolBackgroundcolor', [1 1 1])
 close(get(groot,'CurrentFigure'));
@@ -59,5 +60,9 @@ asrHandles = pnccdGUI(paths,...
 function newImageFcn(src,~)
     axis(src.Parent, 'image');
     set(src.Parent,'YDir','normal','XGrid','off','YGrid','off','ZGrid','off');
+end
+
+function newLineFcn(src,~)
+    xtight(src.Parent);
 end
 

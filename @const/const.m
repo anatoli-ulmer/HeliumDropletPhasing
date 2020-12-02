@@ -19,6 +19,7 @@ classdef const
         NAvo = 6.02214076e23; % N_A [1/mol]
         mol = 6.02214076e23; % N_A [1/mol]
         R = 6.02214076e23 * 1.38064852e-23; % R = N_A*k_B [J/K/mol]
+        rad = 180/pi;
         
         mEl = 9.10938356e-31; % m_e [kg]
         mHe = 4.002602 * 1.660539e-27;
@@ -27,9 +28,12 @@ classdef const
         mXe = 131.293 * 1.660539e-27; 
         mCH3I = 141.94 * 1.660539e-27;  % 1 AMU = 1 g/mol !!!
         mCH3CN = 41.05 * 1.660539e-27; 
-        n_LHe = 2.18e28; % 1/m^3 liquid He density (superfluid !?)
-        rho0 = 145; % kg/m^3
+        
+        % liquid He constants
+        n_LHe = 2.18e28; % 1/m^3 particle density at low T
+        rho0 = 145; % kg/m^3 mass density at low T
         r0 = ( 4/3*pi*2.18e28 )^(-1/3); % Wigner Seitz radius = 0.222 Angstrom
+        surfaceTension = 3.63e-4; % N/m at low T
         titrationChi = pi/( 3*1.38064852e-23 ) * ( 3/( 4*pi*2.18e28 ) )^(2/3);
         
         KtoJ = 1.38066*10^-23;

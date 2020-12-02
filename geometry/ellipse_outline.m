@@ -1,4 +1,4 @@
-function el = ellipse_outline(a, b, rot, center, Npts)
+function varargout = ellipse_outline(a, b, rot, center, Npts)
 
 % ELLIPSE_OUTLINE
 % 
@@ -15,4 +15,11 @@ function el = ellipse_outline(a, b, rot, center, Npts)
 
     el.x = x*cos(rot) - y*sin(rot);
     el.y = x*sin(rot) + y*cos(rot);
+    
+    if nargout==1
+        varargout{1} = el;
+    else
+        varargout{1} = el.x;
+        varargout{2} = el.y;
+    end
 end

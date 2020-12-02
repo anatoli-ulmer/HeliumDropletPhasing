@@ -1,5 +1,9 @@
-function obj = setImageParts(obj,~,~)
-    obj.intpart = uint8(obj.popupArray(5).Value);
-    obj.reconpart = obj.popupArray(6).String{obj.popupArray(6).Value};
-    obj.updateGUI;
+function obj = setImageParts(obj,~,~,noUpdate)
+    obj.intpart = uint8(obj.go.popup(5).Value);
+    obj.reconpart = obj.go.popup(6).String{obj.go.popup(6).Value};
+    if ~exist('noUpdate', 'var')
+        obj.updateGUI();
+    elseif ~noUpdate
+        obj.updateGUI();
+    end
 end

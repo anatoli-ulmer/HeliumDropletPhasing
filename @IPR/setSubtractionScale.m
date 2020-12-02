@@ -1,6 +1,9 @@
-function obj = setSubtractionScale(obj,~,~)
-    obj.subscale = str2num_fast(obj.editArray(3).String);
-    obj.substract_shape = obj.cBoxArray(1).Value;
-    obj.normalize_shape = obj.cBoxArray(2).Value;
-    obj.updateGUI;
+function obj = setSubtractionScale(obj,~,~,noUpdate)
+    obj.subscale = str2num_fast(obj.go.edit(3).String);
+    obj.substract_shape = obj.go.checkbox(1).Value;
+    if ~exist('noUpdate', 'var')
+        obj.updateGUI();
+    elseif ~noUpdate
+        obj.updateGUI();
+    end
 end

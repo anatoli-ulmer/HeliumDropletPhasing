@@ -9,13 +9,14 @@ centerSigma=radiusPX;
 radialRange = .5;
 rMin = round((1-radialRange)*radiusPX);
 rMax = round((1+radialRange)*radiusPX);
-angularKernelPX = 100;
+angularKernelPX = 10;
 radialKernelPX = 3;
 nProfiles = 100;
 thresh = 1/12;
 hAxesFig1 = [];
 hAxesFig2 = [];
 shape = [];
+fittingPart = 'real';
 
 if exist('varargin','var')
     L = length(varargin);
@@ -24,6 +25,7 @@ if exist('varargin','var')
         switch lower(varargin{ni})
             case 'haxesfig1', hAxesFig1 = varargin{ni+1};
             case 'haxesfig2', hAxesFig2 = varargin{ni+1};
+            case 'fittingpart', fittingPart = varargin{ni+1};
         end
     end
 end
@@ -37,7 +39,7 @@ imgSize = size(img);
 [xx,yy] = meshgrid(-imgSize(2)/2:imgSize(2)/2-1,-imgSize(1)/2:imgSize(1)/2-1);
 
 img( xx.^2+yy.^2 > 480.^2) = nan;
-% img( xx.^2+yy.^2 <= 60.^2) = nan;
+% img( xx.^2+yy.^2 <= 65.^2) = nan;
 
 centerFilter = 1 - exp( -(xx.^2+yy.^2)/2/centerSigma^2 );
 nanMask = isnan(img);
@@ -52,6 +54,14 @@ diluteMask = single( imgaussfilt( floatMask, dilutePX) > diluteThreshold );
 filterMask = imgaussfilt( (diluteMask), dilutePX ) .* diluteMask .* floatMask;
 I = I.*filterMask;
 R = ift2(I);
+
+switch fittingPart
+    case 'real', R = real(R);
+    case 'imag', R = imag(R);
+    case 'angle', R = angle(R);
+    case 'abs', R = abs(R);
+end
+
 R=(R).*centerFilter;
 
 % figure(3446); clf
@@ -63,14 +73,14 @@ R=(R).*centerFilter;
 pol = polar_matrix(R,'xcenter', size(img,2)/2+1,'ycenter',size(img,1)/2+1);
 pol = pol(:,rMin:rMax);
 kernel = repmat(gausswin(size(pol,2))',size(pol,1),1);
-% pol = pol.*kernel;
+pol = pol.*kernel;
 
 kernel = ones(angularKernelPX, radialKernelPX);
 kernel = kernel.*repmat(gausswin(radialKernelPX)', angularKernelPX, 1);
 kernel = kernel.*repmat(gausswin(angularKernelPX), 1, radialKernelPX);
 fpol = conv2(pol, kernel, 'same');
-pol = real(pol);
-fpol = real(fpol);
+% pol = real(pol);
+% fpol = real(fpol);
 % [~,minpol] = min(pol,[],2);
 [~,maxpol] = max(pol,[],2);
 % [~,minfpol] = min(fpol,[],2);
@@ -94,8 +104,8 @@ maxfpol_copy(std(maxfpol_copy)>=abs(maxfpol_copy-mean(maxfpol_copy))) = nan;
 % figure(23343)
 % plot(maxpol)
 
-pol = pol/nanmax(real(pol(:)));
-fpol = fpol/nanmax(real(fpol(:)));
+pol = pol/nanmax((pol(:)));
+fpol = fpol/nanmax((fpol(:)));
 
 
 dstep = size(fpol,1)/nProfiles;
@@ -112,9 +122,9 @@ plot(hAxesFig1(4),maxpol, (1:numel(maxpol))/size(pol,1)*360, maxfpol,(1:numel(ma
     x, ones(1,numel(x))*360*(.5+thresh), 'g--',...
     x, ones(1,numel(x))*360*(1-thresh), 'g--');
 
-title(hAxesFig1(1), 'weighted real part');
-title(hAxesFig1(2), 'filtered real part');
-title(hAxesFig1(3), 'traces of real part');
+title(hAxesFig1(1), sprintf('weighted %s part', fittingPart));
+title(hAxesFig1(2), sprintf('filtered %s part', fittingPart));
+title(hAxesFig1(3), sprintf('traces of %s part', fittingPart));
 title(hAxesFig1(4), 'position of maximum');
 
 % arrayfun(@(i) colorbar(fig1axes(i), 'off'), 1:4);
@@ -149,7 +159,7 @@ shape.fitResults = fitResults;
 shape.goodnessOfFit = goodnessOfFit;
 shape.a = fitResults.a * 1024/nPix;
 shape.b = fitResults.b * 1024/nPix;
-shape.rot = mod(fitResults.rot+pi, 2*pi) - pi;
+shape.rot = (mod(fitResults.rot+pi, 2*pi) - pi);
 shape.R = (fitResults.a+fitResults.b)/2/2;
 shape.aspectRatio = iif(fitResults.a>fitResults.b, fitResults.a/fitResults.b, ...
     fitResults.b/fitResults.a);
@@ -164,11 +174,11 @@ ellipseY = size(img,1)/2+1+ellipse_fitfcn(phi_array, fitResults.a, fitResults.b,
 
 xyLims=radiusPX*1.5*[-1,1] + size(R,2)/2 + [0,1];
 
-imagesc(real(R),'parent',hAxesFig2(1)); 
+imagesc((R),'parent',hAxesFig2(1)); 
 set(hAxesFig2(1),'XLim',xyLims,'YLim',xyLims);
 
 hold(hAxesFig2(2), 'off'); 
-imagesc(real(R),'parent',hAxesFig2(2)); 
+imagesc((R),'parent',hAxesFig2(2)); 
 
 colorbar(hAxesFig2(1),'Location','southoutside');
 colorbar(hAxesFig2(2),'Location','southoutside');

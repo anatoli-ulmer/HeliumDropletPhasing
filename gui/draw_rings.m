@@ -1,5 +1,5 @@
 function hRingPlots = draw_rings(hAx, center, nRings, ringRadii, ...
-    ringWidth, ringColor, ringStyle)
+    ringWidth, ringColor, ringStyle, hRingPlots)
 
 %DRAW_RINGS
 %
@@ -25,25 +25,41 @@ end
 if ~exist('ringWidth', 'var')
     ringWidth = .5;
 end
+if isempty(ringWidth)
+    ringWidth = .5;
+end
 if ~exist('ringColor', 'var')
+    ringColor = 'r';
+end
+if isempty(ringColor)
     ringColor = 'r';
 end
 if ~exist('ringStyle', 'var')
     ringStyle= '--';
 end
-% hRingPlots=gobjects(nRings,1);
-% xunit=[];
-% yunit=[];
+if isempty(ringStyle)
+    ringStyle = '--';
+end
+if ~exist('hRingPlots', 'var')
+    hRingPlots=gobjects(1);
+end
 
-th = [linspace(0,2*pi,100), nan];
+th = [linspace(0,2*pi,50), nan];
 xunit = cos(th)' * ringRadii + center(2);
 yunit = sin(th)' * ringRadii + center(1);
-% for ind = 1:nRings
-%     r = ringRadii(ind);
-%     xunit = [xunit, r * cos(th) + center(2), nan];
-%     yunit = [yunit, r * sin(th) + center(1), nan];
-% end
-hRingPlots = plot(hAx, xunit(:), yunit(:), 'Color', ringColor, ...
-    'LineWidth', ringWidth, 'LineStyle', ringStyle);
+
+if isgraphics(hRingPlots)
+    hRingPlots.XData = xunit(:);
+    hRingPlots.YData = yunit(:);
+    hRingPlots.Color = ringColor;
+    hRingPlots.LineWidth = ringWidth;
+    hRingPlots.LineStyle = ringStyle;
+else
+    hold(hAx, 'on');
+    hRingPlots = plot(hAx, xunit(:), yunit(:), 'Color', ringColor, ...
+        'LineWidth', ringWidth, 'LineStyle', ringStyle);
+    hold(hAx, 'off');
+end
+    
 hAx.XLim = lims(1:2);
 hAx.YLim = lims(3:4);

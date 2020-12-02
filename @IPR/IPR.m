@@ -2,7 +2,6 @@ classdef IPR < handle
     properties
         %% General
         gpuAvailable                                                            % number of available gpu devices
-        objectHandle
         %% Fourier space variables
         pnCCDimg
         SCATT                                                                   % Scattering pattern
@@ -67,7 +66,6 @@ classdef IPR < handle
         clims_scatt = log10([0.1, 60]);
         clims_recon = nan(1,2);
         substract_shape = false;
-        normalize_shape = false;
         reconpart char = 'real';
         intpart = uint8(1);
         reconrange = uint8(1);
@@ -77,15 +75,9 @@ classdef IPR < handle
         nStepsUpdatePlot = uint32(100);                                         % update plots after how many steps
         
         %% plot object
-        parentfig = gobjects(1,1)                                               % handle for parent figure
-        figureArray = gobjects(1,1)                                             % handle for IPR main figure
-%         tiledLayout = gobjects(1,1)                                             % handle fpr IPR main figure tiledlayout
-        axesArray = gobjects(6,1)                                               % handle for IPR main figure axes
-        plt                                                                     % handle for IPR main figure plots
-        popupArray = gobjects(6,1)                                              % handle for IPR main figure popup uicontrols
-        cBoxArray = gobjects(2,1)
-        editArray = gobjects(3,1)                                               % handle for IPR main figure edit uicontrols
-        scanObj
+        go                                                                      % graphics object
+        parentfig                                                               % handle for parent figure
+        scanObj                                                                 % object for parameter scan (alpha & deltaFactor)
     end
     methods
 
@@ -110,8 +102,8 @@ classdef IPR < handle
         
         %% DECLARATION
         obj = configIPR(obj)                                                    % load standard values from config file
-        obj = initGPU(obj)
-        obj = initIPR(obj, pnCCDimg)                                            % initialization function                                                    % initialization funciton for GPU arrays
+        obj = initGPU(obj)                                                      % initialization funciton for GPU variables
+        obj = initIPR(obj, pnCCDimg)                                            % initialization function
         obj = initMask(obj)                                                     % initialize masks
         obj = initGUI(obj)                                                      % generate figure and plot objects
         obj = resizeData(obj)                                                   % rebin and resize data
@@ -131,10 +123,10 @@ classdef IPR < handle
         
         data = getReconstructionPart(data, part)                                % Get part of Real space reconstruction, chosen by dropdown menu.
         
-        obj = setIPRColormaps(obj,~,~)                                             % Setter for colormaps
+        obj = setIPRColormaps(obj,~,~)                                          % Setter for colormaps
         obj = setScaleErrorPlot(obj,src,~)                                      % Setter for colorbar limits of Real space plots, chosen by dropdown menu.
-        obj = setImageParts(obj,~,~)                                             % Setter for real/imag/abs/angle part of Real space plots, chosen by dropdown menu.
-        obj = setSubtractionScale(obj,~,~)
+        obj = setImageParts(obj,~,~,noUpdate)                                   % Setter for real/imag/abs/angle part of Real space plots, chosen by dropdown menu.
+        obj = setSubtractionScale(obj,~,~,noUpdate)
         obj = setPlotRange(obj,~,~)
         
         obj = updateGUI(obj,~,~)
