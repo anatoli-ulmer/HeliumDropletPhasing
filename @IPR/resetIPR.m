@@ -14,7 +14,8 @@ function obj = resetIPR(obj,varargin)
     obj.PHASE = angle(TMP0);
     
     obj.overSamplingRatio = calcOverSamplingRatio(obj.MASK, obj.support0);
-    [obj.noise, obj.noiseMatrix, obj.NOISEMatrix] = calcNoise(obj.AMP0);
+%     [obj.noise, obj.noiseMatrix, obj.NOISEMatrix] = calcNoise(obj.AMP0);
+    [obj.noise, obj.noiseMatrix, obj.NOISEMatrix] = calcNoise(obj.SCATT.*obj.MASK);
 
     obj.beta = obj.beta0;
     obj.support = obj.support0;

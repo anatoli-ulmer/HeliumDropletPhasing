@@ -33,7 +33,7 @@ classdef const
         n_LHe = 2.18e28; % 1/m^3 particle density at low T
         rho0 = 145; % kg/m^3 mass density at low T
         r0 = ( 4/3*pi*2.18e28 )^(-1/3); % Wigner Seitz radius = 0.222 Angstrom
-        surfaceTension = 3.63e-4; % N/m at low T
+        surfaceTension = 3.54e-4; % N/m at low T
         titrationChi = pi/( 3*1.38064852e-23 ) * ( 3/( 4*pi*2.18e28 ) )^(2/3);
         
         KtoJ = 1.38066*10^-23;

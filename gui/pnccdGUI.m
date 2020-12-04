@@ -15,21 +15,21 @@ else
     h.main.figure = figure;
 end
 
-h.main.axes = gobjects(2);
+h.main.axes = gobjects(1,2);
 h.main.image = gobjects(1);
 h.main.colorbar = gobjects(1);
 h.main.plot.pnccdRings = gobjects(1);
-h.main.plot.nLitPixel = gobjects(3);
-h.main.plot.nPhotons = gobjects(3);
+h.main.plot.nLitPixel = gobjects(1,3);
+h.main.plot.nPhotons = gobjects(1,3);
 
 h.centering.figure = gobjects(1);
-h.centering.axes = gobjects(4);
-h.centering.plot = gobjects(2);
+h.centering.axes = gobjects(1,4);
+h.centering.plot = gobjects(1,3);
 
 h.shape(1).figure = gobjects(1);
 h.shape(2).figure = gobjects(1);
-h.shape(1).axes = gobjects(4);
-h.shape(2).axes = gobjects(3);
+h.shape(1).axes = gobjects(1,4);
+h.shape(2).axes = gobjects(1,3);
 
 %% Declarations
 
@@ -296,21 +296,15 @@ initFcn();
         if strcmp(questAnswer,'Yes')
             saveDataBaseFcn();
         end
-        tic
         try
             close(hIPR.go.figure);
         catch
         end
-        toc
-        tic
         try
             close(hSimu.figObj);
         catch
         end
-        toc
-        tic
             delete(h.main.figure);
-        toc
         fprintf('bye bye\n')
     end % thisCloseRequestFcn
 
@@ -784,6 +778,7 @@ initFcn();
         if ~isgraphics(h.centering.figure)    
             h.centering.figure = getFigure(h.centering.figure, 'NumberTitle', 'off', ...
                 'Name', 'centering figure');
+            clf(h.centering.figure);
         
             h.centering.axes(1) = subplot(3,3,[1:2,4:5,7:8]);
             h.centering.image(1) = imagesc(h.centering.axes(1), nan);
@@ -805,16 +800,16 @@ initFcn();
                 'LineWidth', .5, 'MarkerSize', 50);
             h.centering.plot(2) = plot(h.centering.axes(3), nan, nan, 'g+', ...
                 'LineWidth', .5, 'MarkerSize', 50);
+            h.centering.plot(3) = gobjects(1);
         end
-        
-        if any( (hData.var.center-size(hData.img.dataCorrected)/2) > 20)
-            hData.var.center=size(hData.img.dataCorrected)/2+1;
-        end
-        
-        smoothedImage = imgaussfilt(hData.img.dataCorrected, 1);
-%         smoothImage = hData.img.dataCorrected;
                     
         for i = 1:nIterations
+            if any( (hData.var.center-size(hData.img.dataCorrected)/2) > 20)
+                hData.var.center=size(hData.img.dataCorrected)/2+1;
+            end
+            
+            smoothedImage = imgaussfilt(hData.img.dataCorrected, 1);
+            
             hData.par.centeringWindowSize = 300;
             imgSize = size(smoothedImage);
             [xx,yy] = meshgrid( 1:imgSize(2), 1:imgSize(1) );
@@ -822,7 +817,7 @@ initFcn();
                 (yy - hData.var.center(1)).^2 ) ...
                 < hData.par.centeringMinRadius^2 ) = nan;
             
-            hData.var.center = findCenterXcorr(...
+            [hData.var.center, h.centering] = findCenterXcorr(...
                 h.centering, ...
                 smoothedImage, ...
                 hData.var.center, ...
@@ -977,8 +972,10 @@ initFcn();
         h.main.figure.Pointer = 'watch'; drawnow limitrate;
         graphicsObj = [];
         if exist('hIPR', 'var')
-            if any(find(strcmp(fieldnames(hIPR), 'go')))
-                graphicsObj = hIPR.go;
+            if ~isempty(hIPR)
+                if any(find(strcmp(fieldnames(hIPR), 'go')))
+                    graphicsObj = hIPR.go;
+                end
             end
         end
         

@@ -1,4 +1,4 @@
-function center = findCenterXcorr(hCentering, ...
+function [center, hCentering] = findCenterXcorr(hCentering, ...
     img, center, windowSize, ringRadii, shiftStrength)
 
 %% calculation
@@ -50,13 +50,16 @@ hCentering.plot(1).YData = center(1);
 hCentering.plot(2).XData = xMax - windowSize;
 hCentering.plot(2).YData = yMax - windowSize/2;
 
-hCentering.plot(3) = draw_rings(hCentering.axes(1), center, [], ringRadii, 1, [.3,.3,.3], [], hCentering.plot(3));
+hCentering.plot(3) = draw_rings(hCentering.axes(1), center, [], ...
+    ringRadii, 1, [.3,.3,.3], [], hCentering.plot(3));
 
 hCentering.axes(1).CLim = [-1,2];
 hCentering.axes(2).CLim = [-1,2];
 hCentering.axes(4).CLim = [-1,2];
 hCentering.axes(1).XLim = [-1,1]*windowSize/2 + center(2);
 hCentering.axes(1).YLim = [-1,1]*windowSize/2 + center(1);
+hCentering.axes(3).XLim = hCentering.image(3).XData;
+hCentering.axes(3).YLim = hCentering.image(3).YData;
 
 hCentering.axes(1).Title.String = sprintf('center = [%.1f, %.1f]', center);
 % ax(2).Title.String = 'upper detector';

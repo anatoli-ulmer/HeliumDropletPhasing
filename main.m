@@ -49,7 +49,9 @@ set(0, 'defaultUicontrolBackgroundcolor', [1 1 1])
 close(get(groot,'CurrentFigure'));
 
 % switch off for performance reasons if necessary:
-% set(groot,'DefaultFigureGraphicsSmoothing','off')
+set(groot,'DefaultFigureGraphicsSmoothing','off')
+
+clear scrH scrW scrSize pathFile
 
 %% first doped run: 283
 
