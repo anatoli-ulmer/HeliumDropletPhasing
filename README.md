@@ -7,11 +7,6 @@ I would like to thank and give credit to all the nice people whos code uploads I
     + nan_rscan (modified version of rscan) -  Narupon Chattrapiban (2020). Radial Scan (https://www.mathworks.com/matlabcentral/fileexchange/18102-radial-scan), MATLAB Central File Exchange. Retrieved September 18, 2020.  
     + str2num_fast - Copyright © Yair Altman - Undocumented MATLAB. All rights reserved.  
 
-## Author
-
-    Anatoli Ulmer  
-    anatoli.ulmer@gmail.com  
-    Berlin, 2022
 
 ## License
 
