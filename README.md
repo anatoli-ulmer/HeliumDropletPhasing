@@ -11,7 +11,7 @@ If you just want to try it out, just run **'main.m'** without any changes.
 
 ## Keyboard Shortcuts
 
-### NAVIGATION
+#### NAVIGATION
 leftarrow   =   previous hit  
 rightarrow  =   next hit  
 s           =   save database  
@@ -19,12 +19,12 @@ l           =   load file
 c           =   clear command window and mouse pointer  
 
 
-### DATA PREPARATION
+#### DATA PREPARATION
 1           =   center image  
 2           =   find droplet shape  
 
 
-### RECONSTRUCTION
+#### RECONSTRUCTION
 3           =   initialize iterative reconstruction with current data  
 r OR 0      =   reset iterative reconstruction  
 4           =   add current steps and loops to reconstruction plan using ER  
@@ -36,12 +36,12 @@ enter       =   run reconstruction plan
 escape      =   stop reconstruction process  
 
 
-### SIMULATION & DECONVOLUTION
+#### SIMULATION & DECONVOLUTION
 x           =   start simulation window
 d           =   run deconvolution on current image
 
 
-### AUTOMATIC RECONSTRUCTION SCRIPTS
+#### AUTOMATIC RECONSTRUCTION SCRIPTS
 f11         =   scan for delta parameter  
 f12         =   scan for alpha parameter  
 k           =   run automated reconstruction for all consecutive hits & runs  
