@@ -13,6 +13,7 @@ function obj = updateGUI(obj,~,~)
                     case 3, obj.go.text.error(i,j).String = sprintf('$E_S$=%.3f ', obj.go.plot.error(1,j).YData(end-1));
                     case 4, obj.go.text.error(i,j).String = sprintf('$E_{NRMSD}$=%.3f ', obj.go.plot.error(1,j).YData(end-1));
                 end
+                obj.go.text.error(i,j).Interpreter = 'latex';
             end
         end
     end

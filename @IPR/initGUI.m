@@ -21,7 +21,8 @@ if ~isgraphics(obj.go.figure)
 
     hUnits = obj.go.figure.Units;
     obj.go.figure.Units = 'pixels';
-    obj.go.figure.Position = [1281.8, 41.8, 1278.4, 616.8];
+    % obj.go.figure.Position = [1281.8, 41.8, 1278.4, 616.8];
+    obj.go.figure.Position(3:4) = [1278.4, 616.8];
     obj.go.figure.Units = hUnits;
 
     %% popups

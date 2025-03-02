@@ -15,7 +15,8 @@ else
     h.main.figure = figure;
     hUnits = h.main.figure.Units;
     h.main.figure.Units = 'pixels';
-    h.main.figure.Position = [2561 1072.2 1080 543.2];
+    % h.main.figure.Position = [2561 1072.2 1080 543.2];
+    h.main.figure.Position(3:4) = [1080 543.2];
     h.main.figure.Units = hUnits;
 end
 
@@ -734,6 +735,7 @@ initFcn();
         h.main.axes(1).Title.String = sprintf(...
             'run \\#%03i - id %i - hit %i, R = %.0fnm, dope = %s', ...
             run, hData.trainId, hit , db.sizing(run).R(hit)*1e9, db.doping(run).dopant);
+        h.main.axes(1).Title.Interpreter = 'latex';
         h.main.axes(2).Title.String = sprintf(...
             '%.3g lit pixel // %.3g photons', ...
             hData.var.nLitPixel, hData.var.nPhotonsOnDetector);
@@ -1180,7 +1182,8 @@ initFcn();
             clf(h.centering.figure);
             hUnits = h.centering.figure.Units;
             h.centering.figure.Units = 'pixels';
-            h.centering.figure.Position = [1.2818e+03 741.8000 1.2784e+03 616.8000];
+            % h.centering.figure.Position = [1.2818e+03 741.8000 1.2784e+03 616.8000];
+            h.centering.figure.Position(3:4) = [1.2784e+03 616.8000];
             h.centering.figure.Units = hUnits;
             h.centering.axes = gobjects(1,4);
             
@@ -1506,7 +1509,8 @@ initFcn();
         if ~isgraphics(h.shape(1).axes(1))
             hUnits = h.shape(1).figure.Units;
             h.shape(1).figure.Units = 'pixels';
-            h.shape(1).figure.Position = [1.8	41.8 1278.4 616.8];
+            % h.shape(1).figure.Position = [1.8	41.8 1278.4 616.8];
+            h.shape(1).figure.Position(3:4) = [1278.4 616.8];
             h.shape(1).figure.Units = hUnits;
             nAxes = 3;
             for iAx = 1:nAxes
@@ -1525,7 +1529,8 @@ initFcn();
         if ~isgraphics(h.shape(2).axes(1))
             hUnits = h.shape(2).figure.Units;
             h.shape(2).figure.Units = 'pixels';
-            h.shape(2).figure.Position = [1.8,741.8,1278.4,616.8];
+            % h.shape(2).figure.Position = [1.8,741.8,1278.4,616.8];
+            h.shape(2).figure.Position(3:4) = [1278.4 616.8];
             h.shape(2).figure.Units = hUnits;
             h.shape(2).figure.KeyPressFcn = @thisKeyPressFcn;
             h.shape(2).figure.KeyReleaseFcn = @thisKeyReleaseFcn;
@@ -2504,7 +2509,8 @@ initFcn();
             clf(h.guinier.figure);
             hUnits = h.guinier.figure.Units;
             h.guinier.figure.Units = 'pixels';
-            h.guinier.figure.Position = [2561	391.4	1080	598.4];
+            % h.guinier.figure.Position = [2561	391.4	1080	598.4];
+            h.guinier.figure.Position(3:4) = [1080	598.4];
             h.guinier.figure.Units = hUnits;
             h.guinier.axes = axes(h.guinier.figure);
             h.guinier.plt(1) = semilogy(h.guinier.axes, q, rprof, '.', 'DisplayName', 'radial profile');
@@ -2673,7 +2679,8 @@ initFcn();
             clf(h.deconvolution.figure);
             hUnits = h.deconvolution.figure.Units;
             h.deconvolution.figure.Units = 'pixels';
-            h.deconvolution.figure.Position = [2561	391.4	1080	598.4];
+            % h.deconvolution.figure.Position = [2561	391.4	1080	598.4];
+            h.deconvolution.figure.Position(3:4) = [1080	598.4];
             h.deconvolution.figure.Units = hUnits;
             h.deconvolution.axes = gobjects(1,4);
             h.deconvolution.img = gobjects(1,4);
