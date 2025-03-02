@@ -17,8 +17,8 @@ if exist(pathFile,'file')
 else
     warning('Function path config file not found. Using standard values.')
     %% define your storage path here if necessary:
-    paths.storage = 'N:\XFEL2019_He';
-%     paths.storage = fullfile(paths.main,'storage');
+    % paths.storage = 'N:\XFEL2019_He';
+    paths.storage = fullfile(paths.main,'storage');
     paths.analysis = fullfile(paths.storage, 'analysis');
     paths.db = fullfile(paths.main, 'db');
     paths.img = fullfile(paths.storage, 'img');
@@ -26,6 +26,7 @@ else
     paths.pnccd_dcg = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain');
     paths.pnccd_dcgb = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain_bg');
     paths.pnccd_dcgrb = fullfile(paths.storage, 'all_hits_corrected_dark_cm_gain_running_bg');
+    paths.runningBg = fullfile(paths.storage, 'bg_running_all_hits');
     paths.pnccd = paths.pnccd_dcgrb;
     paths.xfelPNCCD = paths.pnccd_dcg;
     paths.xfelPNCCD_bg = paths.pnccd_dcgb;
@@ -71,8 +72,8 @@ clear scrH scrW scrSize pathFile
 
 
 %% first doped run: 283
-% 358, 25
-pnccdGUI(paths, 'run', 209, 'hit', 1);
+
+pnccdGUI(paths, 'run', 301, 'hit', 1);
 
 function newImageFcn(src,~)
     axis(src.Parent, 'image');
