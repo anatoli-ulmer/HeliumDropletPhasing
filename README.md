@@ -9,10 +9,9 @@ data, and output source paths in **'main.m'**.
 If you just want to try it out, just run **'main.m'** without any changes.
 
 
-# Keyboard Shortcuts
+## Keyboard Shortcuts
 
-NAVIGATION
---------------------------------------------------------------------------------
+### NAVIGATION
 leftarrow   =   previous hit
 rightarrow  =   next hit
 s           =   save database
@@ -20,7 +19,7 @@ l           =   load file
 c           =   clear command window and mouse pointer
 
 
-DATA PREPARATION
+### DATA PREPARATION
 --------------------------------------------------------------------------------
 1           =   center image
 2           =   find droplet shape
