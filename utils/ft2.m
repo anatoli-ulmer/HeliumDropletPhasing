@@ -1,7 +1,13 @@
-function data=ft2(data)
+function data = ft2(data, symmetricNorm)
 
-    data = fftshift(fft2(fftshift(data)));
+	data = fftshift(fft2(fftshift(data)));
+
     % symmetrisize norm
-    data = data / sqrt(numel(data));
-    
+    if exist('symmetricNorm','var')
+        if symmetricNorm
+            data = data / sqrt(numel(data));
+        end
+    else
+        data = data / sqrt(numel(data));
+    end
 end

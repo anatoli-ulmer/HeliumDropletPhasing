@@ -12,7 +12,7 @@ function p_matrix = polar_matrix(c_matrix,varargin)
 
 p_matrix=zeros(size(c_matrix));
 [Ny,Nx]=size(c_matrix);
-center=[Ny,Nx]/2;
+center=[Ny,Nx]/2+1;
 
 if exist('varargin','var')
     L = length(varargin);
@@ -24,8 +24,10 @@ if exist('varargin','var')
         end
     end
 end
-
-[theta, rho]=meshgrid(linspace(0,2*pi,Nx),1:Ny);
+tt = linspace(0,2*pi,Nx+1);
+tt = tt(1:end-1);
+[theta, rho]=meshgrid(tt,1:Ny);
+% theta = theta(1:end-1);
 [xx,yy]=pol2cart(theta(:),rho(:));
 
 theta=round(theta/2/pi*Nx);

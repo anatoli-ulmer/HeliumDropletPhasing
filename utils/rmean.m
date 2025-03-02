@@ -1,16 +1,20 @@
-function [aArray, rArray] = rmean(I, rMax, rCenter)
+function [aArray, rArray] = rmean(I, rRange, rCenter)
 % RMEAN  Radially average complex valued 2D matrix 'I' until maximum 
-% pixel radius 'rMax' around pixel position 'rCenter'.
+% pixel radius 'rRange' around pixel position 'rCenter'.
 % 
 % [aArray, rArray] = RMEAN(I)
 % 
 % [aArray, rArray] = RMEAN(I, rMax)
 % 
-% [aArray, rArray] = RMEAN(I, rMax, rCenter)
+% [aArray, rArray] = RMEAN(I, [rMin, rMax])
+% 
+% [aArray, rArray] = RMEAN(I, [rMin, rMax], rCenter)
 %
-% [aArray, rArray] = RMEAN(I, rMax, rCenter) computes 
-% the complex valued mean of pixels lying on circles with radii in the 
-% range from 0 to 'rMax', where the unit of 'rMax' is in pixels. 'rMax' is 
+% [aArray, rArray] = RMEAN(I, [rMin, rMax], rCenter) 
+
+% computes the complex valued mean of pixels lying on circles with radii in the 
+% range from 'rMin' to 'rMax', where the units of 'rMin' and 'rMax' are in 
+% pixels. 'rMin is 1 and 'rMax' is 
 % calculated by 'rMax = max(size(I))/2', if it was not specified. The 
 % center of each circle is given by 'rCenter = [yCenter, xCenter]' and is 
 % calculated by 'rCenter = ceil(size(I)/2)', if it was not specified. 
@@ -40,23 +44,29 @@ function [aArray, rArray] = rmean(I, rMax, rCenter)
 % radial distances r over grid of z
 % 6/20/16 DJF Excludes NaN values
 % 6/21/16 DJF Added origin offset
+% 
 % 2020-08-18 Changes by Anatoli Ulmer | anatoli.ulmer@gmail.com
 %   - adaption of output variable type to input variable type and added 
 %     complex value computation
 %   - changed inputs to (I,rMax,rCenter)
 %   - changed units of rMax and rCenter = [yCenter,xCenter] to absolute 
 %     pixel values
+% 2021-12-16 Changes by Anatoli Ulmer | anatoli.ulmer@gmail.com
+%   - added rMin
     
     %%%%% begin init %%%%%
     
     nPixel = size(I, [1,2]);
     
-    if ~exist('rMax','var') || isempty(rMax)
-        rMax = max(nPixel)/2 * ones(1,'like',I);
-    end
     if ~exist('rCenter','var')
-        rCenter = ceil(nPixel/2);
+        rCenter = floor(nPixel/2)+1;
     end
+    if ~exist('rRange','var') || isempty(rRange)
+        rRange = [1, max(nPixel)/2 * ones(1,'like',I)];
+    end
+    if numel(rRange)==1, rRange = [1, rRange]; end
+    rMin = rRange(1);
+    rMax = rRange(2);
     
     xx = nan(nPixel, 'like', I);
     yy = nan(nPixel, 'like', I);
@@ -80,7 +90,7 @@ function [aArray, rArray] = rmean(I, rMax, rCenter)
     
     % loop over the bins(:,:), except the final (r=1) position
     
-    for j=1:rMax
+    for j=rMin:rMax
         % find all matrix locations whose radial distance is in the jth bin
 %         % exclude data that is NaN
         bins(:,:) = rMatrix>=rbins(j) & rMatrix<rbins(j+1);

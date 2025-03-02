@@ -39,12 +39,13 @@ function obj = scanParameter(obj, scanVariable, scanArray, savePath)
     gObj.ErrorPlots.Axes(2) = nexttile(gObj.tiledLayout(3));
     gObj.ErrorPlots.Axes(3) = nexttile(gObj.tiledLayout(3));
     
-    colormap(gObj.FourierSpace.Figure, b2r);
+    colormap(gObj.FourierSpace.Figure, wjet);
+%     colormap(gObj.FourierSpace.Figure, obj.plotting.colormap.dopant);
     gObj.xyData = [obj.yy(1),obj.yy(end)]*6;
     gObj.xyLims = obj.go.axes(6).XLim;
     gObj.yLabels = {obj.go.axes(1).Legend.String{1}, ...
         obj.go.axes(1).Legend.String{2}, ...
-        obj.go.axes(2).Legend.String{1}};
+        obj.go.axes(1).Legend.String{1}};
     gObj.yLims = {[0,0.05], [0,0.2], [0,0.5]};
     
     %% run the reconstructions
@@ -54,7 +55,10 @@ function obj = scanParameter(obj, scanVariable, scanArray, savePath)
     for i=1:nPoints
         
         %% set parameter
-        obj=resetIPR(obj,scanVariable,scanArray(i));
+        obj.configIPR();
+        obj.(scanVariable) = scanArray(i);
+%         obj.initIPR;
+        obj=resetIPR(obj);
         
         %% run reconstruction
         obj.reconPlan=thisReconPlan;
@@ -77,18 +81,28 @@ function obj = scanParameter(obj, scanVariable, scanArray, savePath)
         scanData(i).reconPlan = thisReconPlan;
         
         %% plot images in array
-        fourierData=log10(abs(obj.W));
+%         fourierData=abs(obj.W).^2;
+        fourierData = obj.go.image(1,1).CData;
         fourierPlotRange=obj.clims_scatt;
-        realData=real(obj.w - obj.rho0);
-        realPlotRange=[-1,1]*max(abs(realData(:)));
-        
+
+%         realData=real(obj.w - obj.rho);
+%         realPlotRange=[-1,1]*max(abs(realData(:)));
+
         gObj.FourierSpace.Axes(i) = nexttile(gObj.FourierSpace.TiledLayout);
         gObj.RealSpace.Axes(i) = nexttile(gObj.RealSpace.TiledLayout);
         
         gObj.FourierSpace.Image(i) = imagesc(gObj.FourierSpace.Axes(i), ...
-            fourierData, fourierPlotRange);
+            fourierData);
+        gObj.FourierSpace.Axes(i).ColorScale = 'log';
+        gObj.FourierSpace.Axes(i).CLim = fourierPlotRange;
+%         gObj.RealSpace.Image(i) = imagesc(gObj.RealSpace.Axes(i), ...
+%             gObj.xyData, gObj.xyData, realData, realPlotRange);
+
+        realSpaceData = obj.w - obj.rho;
+%         [realSpaceCData, realSpaceAlphaData] = getReconstructionPart(realSpaceData, 'abs', obj.plotting.alpha.dopant);
         gObj.RealSpace.Image(i) = imagesc(gObj.RealSpace.Axes(i), ...
-            gObj.xyData, gObj.xyData, realData, realPlotRange);
+            gObj.xyData, gObj.xyData, abs(realSpaceData));
+        
         
         hold(gObj.RealSpace.Axes(i), 'on');
         
@@ -125,11 +139,12 @@ function obj = scanParameter(obj, scanVariable, scanArray, savePath)
 %     arrayfun(@(a) legend(gObj.ErrorPlots.Axes(a), gObj.yLabels{a}, 'Interpreter', ...
 %         'latex'), 1:3, 'UniformOutput', false);
 
-    arrayfun(@(a) xlabel(gObj.ErrorPlots.Axes(a), scanVariable), 1:3, ...
+    arrayfun(@(a) xlabel(gObj.ErrorPlots.Axes(a), ['\',scanVariable]), 1:3, ...
         'UniformOutput', false);
     arrayfun(@(a) ylabel(gObj.ErrorPlots.Axes(a), gObj.yLabels{a}, ...
         'Interpreter', 'latex'), 1:3, 'UniformOutput', false);
-    ylabel(gObj.ErrorPlots.Axes(1), obj.go.Results.Axes(1).Legend.String{1}, 'Interpreter', 'latex');
+
+%     ylabel(gObj.ErrorPlots.Axes(1), obj.go.Results.Axes(1).Legend.String{1}, 'Interpreter', 'latex');
 
 %     axis(gObj.axes, 'tight');
     arrayfun(@(a) set(gObj.ErrorPlots.Axes(a), ...
@@ -137,6 +152,7 @@ function obj = scanParameter(obj, scanVariable, scanArray, savePath)
         'YLim', [gObj.yLims{a}(1), max([gObj.yLims{a}(2), gObj.ErrorPlots.Plot(a).YData])]), ...
         1:3, 'UniformOutput', false);
 
+    arrayfun(@(a) ylim(gObj.ErrorPlots.Axes(a), 'auto'), 1:3, 'UniformOutput', false);
     %% copy results into obj.scanObj
     
     obj.scanObj.scanVariable = scanVariable;
@@ -147,23 +163,24 @@ function obj = scanParameter(obj, scanVariable, scanArray, savePath)
     obj.scanObj.gObj = gObj;
     
     %% saving
-    
+    fprintf('saving ...')
     saveTime = string(datetime('now','TimeZone','local',...
-        'Format','yyyy-MM-dd-_HH.mm'));
+        'Format','yyyy-MM-dd_HH.mm'));
     saveName = sprintf('%s-scan_%s_%s', ...
         scanVariable, thisReconPlan{1}, saveTime);
     
-    save(fullfile(savePath, ['obj.scanObj_', saveName, '.mat']), 'obj.scanObj');
+    scanObj = obj.scanObj;
+%     save(fullfile(savePath, ['obj.scanObj_', saveName, '.mat']), 'scanObj');
     
     exportgraphics(gObj.ErrorPlots.Figure, ...
         fullfile(savePath, ['scattering_', saveName, '.png']))
     exportgraphics(gObj.FourierSpace.Figure, ...
         fullfile(savePath, ['reconstruction_', saveName, '.png']))
     exportgraphics(gObj.RealSpace.Figure, ...
-        fullfile(savePath, ['errors_', saveName, '.png']))
+        fullfile(savePath, ['errors_', saveName, '.pdf']))
     exportgraphics(gObj.ErrorPlots.Axes(2), ...
-        fullfile(savePath, ['sim_error_', saveName, '.png']))
+        fullfile(savePath, ['sim_error_', saveName, '.pdf']))
     dlmwrite(fullfile(savePath, ['data_',saveName, '.csv']), ...
         [[scanData(:).(scanVariable)]; [scanData(:).errorSim]]);
-    
+    fprintf(' done!\n')
 end

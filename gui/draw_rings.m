@@ -49,8 +49,8 @@ xunit = cos(th)' * ringRadii + center(2);
 yunit = sin(th)' * ringRadii + center(1);
 
 if isgraphics(hRingPlots)
-    hRingPlots.XData = xunit(:);
-    hRingPlots.YData = yunit(:);
+    hRingPlots.XData = real(xunit(:));
+    hRingPlots.YData = real(yunit(:));
     hRingPlots.Color = ringColor;
     hRingPlots.LineWidth = ringWidth;
     hRingPlots.LineStyle = ringStyle;

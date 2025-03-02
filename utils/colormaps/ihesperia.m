@@ -6,7 +6,7 @@ function p = ihesperia(m)
 % Homepage: http://inversed.ru/Blog_2.htm
 
 if nargin < 1
-    m = size(get(gcf,'colormap'),1); 
+    m = 256; 
 end
 
 cmap_mat = [

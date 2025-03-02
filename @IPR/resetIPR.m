@@ -6,16 +6,43 @@ function obj = resetIPR(obj,varargin)
         obj.(varargin{i}) = varargin{i+1};
     end
     
-    TMP0 = obj.SCATT;
-    TMP0(~obj.MASK) = 0;
+    SCATT = obj.SCATT;
+    SCATT(~obj.MASK) = 0;
     
-    TMP0 = (single(sqrt(complex(TMP0))));
-    obj.AMP0 = abs(TMP0);
-    obj.PHASE = angle(TMP0);
+%     negVals = SCATT<0;
+    AMP0 = (single(sqrt(complex(abs(SCATT)))));
+%     AMP0(negVals) = -AMP0(negVals);
+    obj.masking.taper.mask = zeros(size(AMP0), 'like', AMP0);
     
-    obj.overSamplingRatio = calcOverSamplingRatio(obj.MASK, obj.support0);
-%     [obj.noise, obj.noiseMatrix, obj.NOISEMatrix] = calcNoise(obj.AMP0);
-    [obj.noise, obj.noiseMatrix, obj.NOISEMatrix] = calcNoise(obj.SCATT.*obj.MASK);
+    if obj.masking.constraint_taper
+        obj.masking.taper.size = double(ceil(obj.masking.taper.size * obj.binFactor * obj.padFactor));
+        obj.masking.taper.sigma = double(ceil(obj.masking.taper.sigma * obj.binFactor * obj.padFactor));
+%         obj.masking.taper.PSF = fspecial(obj.masking.taper.method, obj.masking.taper.size, obj.masking.taper.sigma);
+        obj.masking.taper.mask([1:obj.masking.taper.size, end-obj.masking.taper.size+1:end],:) = 1;
+        obj.masking.taper.mask(:,[1:obj.masking.taper.size, end-obj.masking.taper.size+1:end]) = 1;
+        obj.masking.taper.mask = imgaussfilt(obj.masking.taper.mask, obj.masking.taper.sigma);
+        obj.masking.taper.mask = 1- obj.masking.taper.mask;
+        
+        AMP0 = AMP0.*obj.masking.taper.mask;
+        AMP0 = single(AMP0);
+        
+        if obj.gpuAvailable
+            obj.masking.taper.mask = gpuArray(obj.masking.taper.mask);
+        end
+    end
+%     m = (obj.masking.taper.mask<0.5) | ~obj.MASK;
+%     disp(sum(m(:))/numel(obj.MASK))
+%     disp(sum(~obj.MASK(:))/numel(obj.MASK))
+    
+    obj.AMP0 = abs(AMP0);
+    obj.PHASE = angle(AMP0);
+    
+    obj.overSamplingRatio = calcOverSamplingRatio(obj.MASK, obj.support0, obj.masking.constraint_RMask, obj.RMASK);
+    obj.noise = calcNoise(obj.AMP0, obj.MASK, ...
+        obj.binFactor, obj.constraints.noise);
+% % %     obj.noise = sqrt(mean(abs(obj.SCATT(robj.MASK>0))));
+%     obj.noise = rms(obj.AMP0(obj.MASK>0));
+% % %     [obj.noise, obj.noiseMatrix, obj.NOISEMatrix] = calcNoise(obj.SCATT.*obj.MASK);
 
     obj.beta = obj.beta0;
     obj.support = obj.support0;

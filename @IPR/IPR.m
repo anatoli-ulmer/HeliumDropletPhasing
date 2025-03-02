@@ -1,6 +1,9 @@
 classdef IPR < handle
     properties
         %% General
+        runID
+        hitID
+        trainID
         gpuAvailable                                                            % number of available gpu devices
         %% Fourier space variables
         pnCCDimg
@@ -22,6 +25,9 @@ classdef IPR < handle
         phase                                                                   % current Real space phase
         support                                                                 % current binary Support constraint, may include reality and positivity constraints
         support0                                                                % start binary Support constraint
+        supportShrunk
+        constraintsViolated
+        constraintsMet
         w                                                                       % current complex valued reconstruction after applying Real space constraints
         ws                                                                      % current complex valued reconstruction before applying Real space constraints
         rho                                                                     % current droplet density
@@ -38,7 +44,7 @@ classdef IPR < handle
         %% Reconstruction parameter
         reconPlan
         constraints
-        errors = nan(3,1, 'single')
+        errors = nan(4,1, 'single')
         noise = (single(1.0))                                                   % noise amplitude estimation value, noise = rms(noiseMatrix) = rms(NOISEMatrix)
         noiseMatrix                                                             % noise amplitude estimation matrix in Real space
         NOISEMatrix                                                             % noise amplitude estimation matrix in Fourier space
@@ -50,8 +56,10 @@ classdef IPR < handle
         random_phase = false;
         alpha = 1.0 * ones(1, 'single')
         delta = 0.1 * ones(1, 'single')
+        delta0 = 0.1 * ones(1, 'single')
         deltaFactor = 5*ones(1, 'single')
         phaseMin = -Inf * ones(1, 'single')
+        phaseMax = Inf * ones(1, 'single')
         mixScatt = false
         masking
         filter
@@ -63,7 +71,8 @@ classdef IPR < handle
         yy
         binFactor = (single(0.5));                                              % 1 | 0.5 | 0.25 - factor for image binning before reconstruction
         binMethod = 'bilinear';                                                 % 'nearest' | 'bilinear' | 'bicubic' - method for image binning before reconstruction
-        clims_scatt = log10([0.1, 60]);
+        padFactor = single(2);
+        clims_scatt = [0.1, 100];
         clims_recon = nan(1,2);
         substract_shape = false;
         reconpart char = 'real';
@@ -73,6 +82,8 @@ classdef IPR < handle
         int_cm char = 'imorgen';                                                % colormap for Fourier space axes
         subscale = 1.0;                                                         % factor for droplet density subtraction before plotting (applied for plotting only!)
         nStepsUpdatePlot = uint32(100);                                         % update plots after how many steps
+        cscale_scatt = 'log';
+        plotting
         
         %% plot object
         go                                                                      % graphics object
@@ -93,7 +104,9 @@ classdef IPR < handle
             obj.configIPR();
             % overwrite data by variable input arguments
             for i=1:2:numel(varargin)
-                obj.(varargin{i})=varargin{i+1};
+                if ~(strcmp(varargin{i}, 'alpha') && isnan(varargin{i+1}))
+                    obj.(varargin{i})=varargin{i+1};
+                end
             end
             obj.initGPU();
             % init
@@ -108,7 +121,8 @@ classdef IPR < handle
         obj = initGUI(obj)                                                      % generate figure and plot objects
         obj = resizeData(obj)                                                   % rebin and resize data
         obj = resetIPR(obj,varargin)                                            % reset variables to starting values
-        [noise, noiseMatrix, NOISEMatrix] = calcNoise(AMP0)                     % calculate noise amplitude
+        [noise, noiseMatrix, NOISEMatrix] = calcNoise(AMP0, MASK, ...
+            binFactor, noiseConstraints)    % calculate noise amplitude
         
         obj = reconAddToPLan(obj, method, nSteps, nLoops)
         obj = reconRunPlan(obj, method, nSteps, nLoops)
@@ -118,7 +132,7 @@ classdef IPR < handle
 
         WS = projectorModulus(AMP, AMP0, PHASE, MASK)
         
-        beta = updateBeta(beta0, beta, nTotal)
+        obj = updateBeta(obj)
         support = updateSupport(w)
         
         data = getReconstructionPart(data, part)                                % Get part of Real space reconstruction, chosen by dropdown menu.
@@ -130,5 +144,7 @@ classdef IPR < handle
         obj = setPlotRange(obj,~,~)
         
         obj = updateGUI(obj,~,~)
+        
+        obj = saveImages(obj,savename)
     end
 end

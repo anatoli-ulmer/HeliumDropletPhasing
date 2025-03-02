@@ -1,7 +1,13 @@
-function data=ift2(data)
+function data = ift2(data, symmetricNorm)
 
-    data = ifftshift(ifft2(ifftshift(data)));
+	data = fftshift(ifft2(fftshift(data)));
+
     % symmetrisize norm
-    data = data * sqrt(numel(data));
-    
+    if exist('symmetricNorm','var')
+        if symmetricNorm
+            data = data * sqrt(numel(data));
+        end
+    else
+        data = data * sqrt(numel(data));
+    end
 end

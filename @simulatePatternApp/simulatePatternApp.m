@@ -32,25 +32,28 @@ classdef simulatePatternApp < handle
             % Scattering
             simParameter.ratio = 7;
             simParameter.nPhotonsOnDetector = 1e5;
+            simParameter.binFactor = 0.5;
             simParameter.nDroplet = ((simParameter.aDrop+simParameter.bDrop)...
                 /2/0.222)^3;
             simParameter.nDopants = ((simParameter.aCore+simParameter.bCore)...
                 /2/0.222)^3;
             % Geometry
-            simParameter.nPixel = [1024,1024];
+            simParameter.nPixel = [1024,1024]*simParameter.binFactor;
             simParameter.center = 0.5*simParameter.nPixel+1;
             % Graphics
-            simParameter.cLims = [-1,2];
+            simParameter.cLims = [0.1,100];
             simParameter.cMap = ihesperia;
             simParameter.subtractionScale = 0.9;
-            simParameter.YData = 6 * ( [1,simParameter.nPixel(1)] ...
+            simParameter.realSpacePixelSize = 6;
+            simParameter.YData = simParameter.realSpacePixelSize * ( [1,simParameter.nPixel(1)] ...
                 - simParameter.center(1) );
-            simParameter.XData = 6 * ( [1,simParameter.nPixel(2)] ...
+            simParameter.XData = simParameter.realSpacePixelSize * ( [1,simParameter.nPixel(2)] ...
                 - simParameter.center(2) );
-            simParameter.ellipse = ellipse_outline(simParameter.aDrop,...
-                simParameter.bDrop, simParameter.rotationDrop);
+            simParameter.ellipse = ellipse_outline(simParameter.aDrop/6,...
+                simParameter.bDrop/6, simParameter.rotationDrop);
             simParameter.xyLim = 1.2*max(simParameter.aDrop,...
-                simParameter.bDrop)*[-1,1] + [0,6];
+                simParameter.bDrop)*[-1,1] + [0,simParameter.realSpacePixelSize];
+            simParameter.xyLimScatt = simParameter.nPixel - simParameter.center;
             % Rest
             simParameter.isValidApp = false;
             simParameter.savepath = ['C:\Users\Toli\Google Drive\',...
@@ -86,39 +89,38 @@ classdef simulatePatternApp < handle
         end
         function app = updateParameter(app,src,evt)
             % Positions
-            app.simParameter.aDrop = str2num_fast(app.editObjArray(1).String);
-            app.simParameter.bDrop = str2num_fast(app.editObjArray(2).String);
-            app.simParameter.rotationDrop = str2num_fast(...
+            app.simParameter.aDrop = str2double(app.editObjArray(1).String);
+            app.simParameter.bDrop = str2double(app.editObjArray(2).String);
+            app.simParameter.rotationDrop = str2double(...
                 app.editObjArray(3).String)/180*pi;
-            app.simParameter.aCore = str2num_fast(app.editObjArray(4).String);
-            app.simParameter.bCore = str2num_fast(app.editObjArray(5).String);
-            app.simParameter.rotationCore = str2num_fast(...
+            app.simParameter.aCore = str2double(app.editObjArray(4).String);
+            app.simParameter.bCore = str2double(app.editObjArray(5).String);
+            app.simParameter.rotationCore = str2double(...
                 app.editObjArray(6).String)/180*pi;
-            app.simParameter.x1 = str2num_fast(app.editObjArray(7).String);
-            app.simParameter.y1 = str2num_fast(app.editObjArray(9).String);
-            app.simParameter.x2 = str2num_fast(app.editObjArray(8).String);
-            app.simParameter.y2 = str2num_fast(app.editObjArray(10).String);
+            app.simParameter.x1 = str2double(app.editObjArray(7).String);
+            app.simParameter.y1 = str2double(app.editObjArray(8).String);
+            app.simParameter.x2 = str2double(app.editObjArray(9).String);
+            app.simParameter.y2 = str2double(app.editObjArray(10).String);
             % Scattering
-            app.simParameter.ratio = str2num_fast(app.editObjArray(11).String);
-            app.simParameter.nPhotonsOnDetector = str2num_fast(...
+            app.simParameter.ratio = str2double(app.editObjArray(11).String);
+            app.simParameter.nPhotonsOnDetector = str2double(...
                 app.editObjArray(12).String);
-            app.simParameter.nDroplet = ( (app.simParameter.aDrop + ...
-                app.simParameter.bDrop) /2/0.222 )^3;
-            app.simParameter.nDopants = ( (app.simParameter.aCore + ...
-                app.simParameter.bCore) /2/0.222 )^3;
+            app.simParameter.nDroplet = (mean([app.simParameter.aDrop, app.simParameter.bDrop]) / 0.222) ^3;
+            app.simParameter.nDopants = (app.simParameter.ratio*mean([app.simParameter.aCore, app.simParameter.bCore]) / 0.222) ^3;
             % Geometry
             app.simParameter.nPixel = size(app.simData.dataCropped);
             app.simParameter.center = 0.5*app.simParameter.nPixel+1;
             % Graphics
             app.simParameter.subtractionScale = 0.9;
-            app.simParameter.YData = 6 * ( [1,app.simParameter.nPixel(1)] ...
+            app.simParameter.YData = app.simParameter.realSpacePixelSize * ( [1,app.simParameter.nPixel(1)] ...
                 - app.simParameter.center(1) );
-            app.simParameter.XData = 6 * ( [1,app.simParameter.nPixel(2)] ...
+            app.simParameter.XData = app.simParameter.realSpacePixelSize * ( [1,app.simParameter.nPixel(2)] ...
                 - app.simParameter.center(2) );
             app.simParameter.ellipse=ellipse_outline(app.simParameter.aDrop,...
                 app.simParameter.bDrop, app.simParameter.rotationDrop);
             app.simParameter.xyLim=1.2*max(app.simParameter.aDrop,...
                 app.simParameter.bDrop)*[-1,1];
+            app.simParameter.xyLimScatt = [1,app.simParameter.nPixel(2)] - app.simParameter.center;
             % Rest
             app.simParameter.isValidApp = true;
             app.simParameter.savepath = app.editObjArray(13).String;
@@ -146,9 +148,9 @@ classdef simulatePatternApp < handle
                 app.simParameter.subtractionScale*app.simData.droplet;
             app.imgObjArray(2).CData = app.simData.scene2 - ...
                 app.simParameter.subtractionScale*app.simData.droplet;
-            app.imgObjArray(3).CData = log10(abs(app.simData.scatt1));
-            app.imgObjArray(4).CData = log10(abs(app.simData.dataCropped));
-            app.imgObjArray(5).CData = log10(abs(app.simData.scatt2));
+            app.imgObjArray(3).CData = abs(app.simData.scatt1);
+            app.imgObjArray(4).CData = (app.simData.dataCropped);
+            app.imgObjArray(5).CData = abs(app.simData.scatt2);
             app.imgObjArray(6).XData = app.simParameter.ellipse.x;
             app.imgObjArray(6).YData = app.simParameter.ellipse.y;
             app.imgObjArray(7).XData = app.simParameter.ellipse.x;
@@ -162,9 +164,27 @@ classdef simulatePatternApp < handle
             app.axesObjArray(2).YLim = app.simParameter.xyLim;
             app.axesObjArray(2).CLim = max(abs(app.imgObjArray(2).CData(:)))...
                 *[-1 1];
-            app.axesObjArray(3).CLim = log10(app.simParameter.cLims);
-            app.axesObjArray(4).CLim = log10(app.simParameter.cLims);
-            app.axesObjArray(5).CLim = log10(app.simParameter.cLims);
+            app.axesObjArray(3).CLim = app.simParameter.cLims;
+            app.axesObjArray(4).CLim = app.simParameter.cLims;
+            app.axesObjArray(5).CLim = app.simParameter.cLims;
+            
+            app.imgObjArray(3).XData = app.simParameter.xyLimScatt;
+            app.imgObjArray(4).XData = app.simParameter.xyLimScatt;
+            app.imgObjArray(5).XData = app.simParameter.xyLimScatt;
+            app.imgObjArray(3).YData = app.simParameter.xyLimScatt;
+            app.imgObjArray(4).YData = app.simParameter.xyLimScatt;
+            app.imgObjArray(5).YData = app.simParameter.xyLimScatt;
+            
+            app.axesObjArray(3).XLim = app.simParameter.xyLimScatt;
+            app.axesObjArray(4).XLim = app.simParameter.xyLimScatt;
+            app.axesObjArray(5).XLim = app.simParameter.xyLimScatt;
+            app.axesObjArray(3).YLim = app.simParameter.xyLimScatt;
+            app.axesObjArray(4).YLim = app.simParameter.xyLimScatt;
+            app.axesObjArray(5).YLim = app.simParameter.xyLimScatt;
+            
+            app.axesObjArray(3).ColorScale = 'log';
+            app.axesObjArray(4).ColorScale = 'log';
+            app.axesObjArray(5).ColorScale = 'log';
             fprintf('\tdone!\n')
         end
         function app = createSaveFig(app,evt)
@@ -245,7 +265,7 @@ classdef simulatePatternApp < handle
                 'Name', 'Simulate Scattering', ...
                 'Tag', 'simFigure');
             clf(app.figObj);
-            app.figObj.Visible = 'off';
+%             app.figObj.Visible = 'off';
             drawnow;
             app.figObj.Color = [1 1 1];
             app.figObj.Position = [200 200 fWidth fHeight];
@@ -262,15 +282,15 @@ classdef simulatePatternApp < handle
 %             app.axesObjArray(5) = nexttile(app.tlObj,6);
             
             app.axesObjArray(1) = mysubplot(2,3,1,'parent',app.figObj);
-            imagesc(nan(1));
+            imagesc(app.axesObjArray(1), nan(1));
             app.axesObjArray(2) = mysubplot(2,3,3,'parent',app.figObj);
-            imagesc(nan(1));
+            imagesc(app.axesObjArray(2), nan(1));
             app.axesObjArray(3) = mysubplot(2,3,4,'parent',app.figObj);
-            imagesc(nan(1));
+            imagesc(app.axesObjArray(3), nan(1));
             app.axesObjArray(4) = mysubplot(2,3,5,'parent',app.figObj);
-            imagesc(nan(1));
+            imagesc(app.axesObjArray(4), nan(1));
             app.axesObjArray(5) = mysubplot(2,3,6,'parent',app.figObj);
-            imagesc(nan(1));
+            imagesc(app.axesObjArray(5), nan(1));
             
             app.imgObjArray(1) = imagesc(app.axesObjArray(1), 'CData', ...
                 ones(app.simParameter.nPixel),'XData',app.simParameter.XData,...
@@ -293,11 +313,11 @@ classdef simulatePatternApp < handle
                 app.simParameter.ellipse.x,app.simParameter.ellipse.y,'k--',...
                 'linewidth', 2);
             
-            app.cBarArray(1) = colorbar(app.axesObjArray(1));
-            app.cBarArray(2) = colorbar(app.axesObjArray(2));
-            app.cBarArray(3) = colorbar(app.axesObjArray(3));
-            app.cBarArray(4) = colorbar(app.axesObjArray(4));
-            app.cBarArray(5) = colorbar(app.axesObjArray(5));
+%             app.cBarArray(1) = colorbar(app.axesObjArray(1));
+%             app.cBarArray(2) = colorbar(app.axesObjArray(2));
+%             app.cBarArray(3) = colorbar(app.axesObjArray(3));
+%             app.cBarArray(4) = colorbar(app.axesObjArray(4));
+%             app.cBarArray(5) = colorbar(app.axesObjArray(5));
             linkaxes([app.axesObjArray(1), app.axesObjArray(2)], 'xy')
             linkaxes([app.axesObjArray(3), app.axesObjArray(4),...
                 app.axesObjArray(5)], 'xy')
@@ -387,9 +407,14 @@ classdef simulatePatternApp < handle
                 'String', '# photons on detector', 'Units', 'normalized', ...
                 'Position', [.4 .5 .09 .04], 'Callback', @app.startSimulation);
             
-            drawnow;
             app.updateEditFields();
-            app.figObj.Visible = 'on';
+%             app.figObj.Visible = 'on';
+            drawnow;
+            app.cBarArray(1) = colorbar(app.axesObjArray(1));
+            app.cBarArray(2) = colorbar(app.axesObjArray(2));
+            app.cBarArray(3) = colorbar(app.axesObjArray(3));
+            app.cBarArray(4) = colorbar(app.axesObjArray(4));
+            app.cBarArray(5) = colorbar(app.axesObjArray(5));
         end
     end
     %% App creation and deletion

@@ -7,6 +7,7 @@ function obj = initIPR(obj, pnCCDimg)
         obj.dropletOutline.y=nan(1,100);
     end
     obj.SCATT = (single(pnCCDimg));
+   
     obj.resizeData();
     obj.initMask();
     

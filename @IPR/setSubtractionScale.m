@@ -1,5 +1,5 @@
 function obj = setSubtractionScale(obj,~,~,noUpdate)
-    obj.subscale = str2num_fast(obj.go.edit(3).String);
+    obj.subscale = str2double(obj.go.edit(3).String);
     obj.substract_shape = obj.go.checkbox(1).Value;
     if ~exist('noUpdate', 'var')
         obj.updateGUI();

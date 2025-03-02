@@ -1,17 +1,33 @@
-function imgOut = imgBinning(img, binFactor)
+function imgOut = imgBinning(img, binFactor, movMeanRange)
 
-binStep = 1/binFactor;
-[ny,nx] = size(img);
-% imgOut = zeros(binFactor*[ny,nx]);
-imgTmp = zeros([binFactor*[ny,nx], binStep, binStep]);
+    oldSize = size(img);
+    newSize = round(oldSize*binFactor);
+    dx = round(1/binFactor);
+    
+    ix = 1:dx:oldSize(2);
+    iy = 1:dx:oldSize(1);
+    
+    if exist('movMeanRange', 'var')
+%         conv2()
+        img = movmean(movmean(img, movMeanRange, 1), movMeanRange, 2);
+        imgOut = img(iy, ix);
+%         for i=1:dx
+%             for j=1:dx
+%                 imgOut(i) = img(iy+(i-1), ix+(j-1));
+%                 k=k+1;
+%             end
+%         end
+    else
+        img3d = zeros([newSize, dx]);
+        k=1;
+        for i=1:dx
+            for j=1:dx
+                img3d(:,:,k) = img(iy+(i-1), ix+(j-1));
+                k=k+1;
+            end
+        end
 
-for i=1:binStep
-    for j=1:binStep
-        imgTmp(:,:,i,j) = img(i:binStep:ny,j:binStep:nx);
-%         imgOut = imgOut + img(i:binStep:ny,j:binStep:nx);
+        imgOut = mean(img3d,3, 'omitnan');
     end
-end
 
-% imgOut = nanmedian(nanmedian(imgTmp, 4), 3);
-imgOut = nanmean(nanmean(imgTmp, 4), 3);
-% imgOut = nansum(nansum(imgTmp, 4), 3);
+end

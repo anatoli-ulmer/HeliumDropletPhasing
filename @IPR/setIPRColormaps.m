@@ -6,4 +6,7 @@ function obj = setIPRColormaps(obj,~,~)
     colormap(obj.go.axes(4), obj.int_cm);
     colormap(obj.go.axes(5), obj.rec_cm);
     colormap(obj.go.axes(6), obj.rec_cm);
+    drawnow;
+    changeColorbarAlpha(obj.go.axes(5),obj.plotting.alpha.dopant);
+    changeColorbarAlpha(obj.go.axes(6),obj.plotting.alpha.dopant);
 end

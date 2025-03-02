@@ -13,6 +13,9 @@ function obj = reconRunPlan(obj, method, nSteps, nLoops)
         [method,nSteps,nLoops]=obj.reconPlan{i,:};
         for j=1:nLoops
             obj.reconIterate(nSteps,method);
+            if ( obj.constraints.doERstep )
+                obj.reconIterate(1,'er');
+            end
             obj.updateGUI;
         end
     end
